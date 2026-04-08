@@ -2,13 +2,28 @@
   <div class="auth-container">
     <div class="auth-box">
       <h2>Register</h2>
+      <p class="subtitle">Create your account to start managing tasks.</p>
 
-      <input v-model="email" placeholder="Email" />
-      <input v-model="password" type="password" placeholder="Password" />
+      <div class="form-group">
+        <label>Email</label>
+        <input v-model="email" placeholder="Email" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input v-model="password" type="password" placeholder="Password" />
+      </div>
+
+      <div class="form-group">
+        <label>Role</label>
+        <select v-model="role">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
 
       <p v-if="error" class="error">{{ error }}</p>
 
-      <button @click="register">Register</button>
+      <button class="submit-btn" @click="register">Register</button>
 
       <p class="link" @click="$router.push('/login')">
         Go to Login
@@ -25,6 +40,7 @@ export default {
     return {
       email: '',
       password: '',
+      role: 'member',
       error: ''
     };
   },
@@ -42,7 +58,8 @@ export default {
       try {
         await api.post('/auth/register', {
           email: this.email,
-          password: this.password
+          password: this.password,
+          role: this.role
         });
 
         alert('Registered successfully');
@@ -62,24 +79,67 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px;
 }
 
 .auth-box {
   background: white;
-  padding: 30px;
-  width: 300px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  width: 360px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.auth-box h2 {
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: #64748b;
+  margin-bottom: 18px;
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 15px;
+  outline: none;
+  background: white;
+}
+
+select:focus {
+  border-color: #6366f1;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 4px;
 }
 
 .link {
-  margin-top: 10px;
-  color: blue;
+  margin-top: 16px;
+  color: #4338ca;
+  font-weight: 600;
   cursor: pointer;
   text-align: center;
 }
 .error {
-  color: red;
-  margin-top: 10px;
+  color: #dc2626;
+  margin-top: 4px;
+  margin-bottom: 12px;
 }
 </style>

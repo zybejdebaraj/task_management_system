@@ -2,13 +2,20 @@
   <div class="auth-container">
     <div class="auth-box">
       <h2>Login</h2>
+      <p class="subtitle">Welcome back! Enter your credentials to continue.</p>
 
-      <input v-model="email" placeholder="Email" />
-      <input v-model="password" type="password" placeholder="Password" />
+      <div class="form-group">
+        <label>Email</label>
+        <input v-model="email" placeholder="Email" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input v-model="password" type="password" placeholder="Password" />
+      </div>
 
       <p v-if="error" class="error">{{ error }}</p>
 
-      <button @click="login">Login</button>
+      <button class="submit-btn" @click="login">Login</button>
 
       <p class="link" @click="$router.push('/register')">
         Go to Register
@@ -61,25 +68,54 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px;
 }
 
 .auth-box {
   background: white;
-  padding: 30px;
-  width: 300px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  width: 360px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.auth-box h2 {
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: #64748b;
+  margin-bottom: 18px;
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 4px;
 }
 
 .link {
-  margin-top: 10px;
-  color: blue;
+  margin-top: 16px;
+  color: #4338ca;
+  font-weight: 600;
   cursor: pointer;
   text-align: center;
 }
 
 .error {
-  color: red;
-  margin-top: 10px;
+  color: #dc2626;
+  margin-top: 4px;
+  margin-bottom: 12px;
 }
 </style>

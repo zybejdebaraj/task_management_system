@@ -3,10 +3,25 @@ const pool = require('../config/db');
 // Get all tasks for logged-in user
 exports.getTasks = async (req, res) => {
   try {
-    const tasks = await pool.query(
-      'SELECT * FROM tasks WHERE user_id = $1',
-      [req.user.id]
-    );
+    let tasks;
+    if (req.user.role === 'admin') {
+      tasks = await pool.query(
+        `SELECT t.*, p.name AS project_name
+         FROM tasks t
+         LEFT JOIN projects p ON p.id = t.project_id
+         ORDER BY t.id DESC`
+      );
+    } else {
+      tasks = await pool.query(
+        `SELECT t.*, p.name AS project_name
+         FROM tasks t
+         INNER JOIN project_members pm ON pm.project_id = t.project_id
+         LEFT JOIN projects p ON p.id = t.project_id
+         WHERE pm.user_id = $1
+         ORDER BY t.id DESC`,
+        [req.user.id]
+      );
+    }
 
     res.json(tasks.rows);
   } catch (err) {
@@ -16,16 +31,31 @@ exports.getTasks = async (req, res) => {
 
 // Create task
 exports.createTask = async (req, res) => {
-  const { title, status } = req.body;
+  const { title, status, project_id } = req.body;
 
   if (!title || title.trim() === '') {
     return res.status(400).json({ message: 'Title is required' });
   }
+  if (!project_id) {
+    return res.status(400).json({ message: 'Project is required' });
+  }
 
   try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can create tasks' });
+    }
+
     const task = await pool.query(
-      'INSERT INTO tasks (title, status, user_id) VALUES ($1, $2, $3) RETURNING *',
-      [title, status || 'todo', req.user.id]
+      `INSERT INTO tasks (title, status, project_id, created_by, user_id, completed_at)
+       VALUES ($1, $2, $3, $4, $4, $5)
+       RETURNING *`,
+      [
+        title.trim(),
+        status || 'todo',
+        project_id,
+        req.user.id,
+        status === 'done' ? new Date() : null,
+      ]
     );
 
     res.json(task.rows[0]);
@@ -39,10 +69,14 @@ exports.deleteTask = async (req, res) => {
   const { id } = req.params;
 
   try {
-    await pool.query(
-      'DELETE FROM tasks WHERE id = $1 AND user_id = $2',
-      [id, req.user.id]
-    );
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can delete tasks' });
+    }
+
+    const deleted = await pool.query('DELETE FROM tasks WHERE id = $1 RETURNING id', [id]);
+    if (!deleted.rows.length) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
 
     res.json({ message: 'Task deleted' });
   } catch (err) {
@@ -53,19 +87,42 @@ exports.deleteTask = async (req, res) => {
 //update task
 exports.updateTask = async (req, res) => {
   const { id } = req.params;
-  const { title, status } = req.body;
+  const { title, status, project_id } = req.body;
+
+  if (!title || title.trim() === '') {
+    return res.status(400).json({ message: 'Title is required' });
+  }
+  if (!project_id) {
+    return res.status(400).json({ message: 'Project is required' });
+  }
 
   try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can update tasks' });
+    }
+
+    const existingTask = await pool.query('SELECT status, completed_at FROM tasks WHERE id = $1', [id]);
+    if (!existingTask.rows.length) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    let completedAt = existingTask.rows[0].completed_at;
+    if (status === 'done' && !completedAt) {
+      completedAt = new Date();
+    } else if (status !== 'done') {
+      completedAt = null;
+    }
+
     const updated = await pool.query(
-      'UPDATE tasks SET title=$1, status=$2 WHERE id=$3 AND user_id=$4 RETURNING *',
-      [title, status, id, req.user.id]
+      `UPDATE tasks
+       SET title = $1, status = $2, project_id = $3, completed_at = $4
+       WHERE id = $5
+       RETURNING *`,
+      [title.trim(), status, project_id, completedAt, id]
     );
 
     res.json(updated.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-  if (!title || title.trim() === '') {
-  return res.status(400).json({ message: 'Title is required' });
-}
 };

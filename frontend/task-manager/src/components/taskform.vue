@@ -1,34 +1,42 @@
 <template>
-  <div class="form">
-    <input v-model="title" placeholder="New task..." />
+  <div>
+    <div class="form">
+      <input v-model="title" placeholder="New task..." />
+      <select v-model="projectId">
+        <option disabled value="">Select project</option>
+        <option v-for="project in projects" :key="project.id" :value="project.id">
+          {{ project.name }}
+        </option>
+      </select>
 
-    <select v-model="status">
-      <option value="todo">Todo</option>
-      <option value="in-progress">In Progress</option>
-      <option value="done">Done</option>
-    </select>
+      <select v-model="status">
+        <option value="todo">Todo</option>
+        <option value="in-progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
 
-    <button @click="handleSubmit">
-      {{ editingTask ? 'Update' : 'Add' }}
-    </button>
+      <button @click="createTask">
+        {{ editingTask ? 'Update' : 'Add' }}
+      </button>
 
-    <button v-if="editingTask" @click="cancelEdit" class="cancel">
-      Cancel
-    </button>
+      <button v-if="editingTask" @click="cancelEdit" class="cancel">
+        Cancel
+      </button>
+    </div>
+    <p v-if="error" class="error">{{ error }}</p>
   </div>
-  <p v-if="error" class="error">{{ error }}</p>
-
 </template>
 
 <script>
 import api from '../api/api';
 
 export default {
-  props: ['editingTask'],
+  props: ['editingTask', 'projects'],
 
   data() {
     return {
       title: '',
+      projectId: '',
       status: 'todo',
       error: ''
     };
@@ -39,44 +47,46 @@ export default {
       if (newTask) {
         this.title = newTask.title;
         this.status = newTask.status;
+        this.projectId = newTask.project_id;
       }
     }
   },
 
   methods: {
-   async handleSubmit() {
-  // ❌ VALIDATION
-  if (!this.title.trim()) {
-    this.error = 'Task title is required';
-    return;
-  }
+    async createTask() {
+      if (!this.title.trim()) {
+        this.error = 'Title is required';
+        return;
+      }
+      if (!this.projectId) {
+        this.error = 'Project is required';
+        return;
+      }
 
-  this.error = '';
+      try {
+        this.error = '';
+        if (this.editingTask) {
+          await api.put(`/tasks/${this.editingTask.id}`, {
+            title: this.title,
+            status: this.status,
+            project_id: this.projectId
+          });
+          this.$emit('taskUpdated');
+        } else {
+          await api.post('/tasks', {
+            title: this.title,
+            status: this.status,
+            project_id: this.projectId
+          });
+          this.$emit('taskCreated');
+        }
 
-  try {
-    if (this.editingTask) {
-      await api.put(`/tasks/${this.editingTask.id}`, {
-        title: this.title,
-        status: this.status
-      });
+        this.resetForm();
 
-      this.$emit('taskUpdated');
-
-    } else {
-      await api.post('/tasks', {
-        title: this.title,
-        status: this.status
-      });
-
-      this.$emit('taskCreated');
-    }
-
-    this.resetForm();
-
-  } catch (err) {
-    console.error(err);
-  }
-},
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Failed to save task';
+      }
+    },
 
     cancelEdit() {
       this.resetForm();
@@ -86,6 +96,8 @@ export default {
     resetForm() {
       this.title = '';
       this.status = 'todo';
+      this.projectId = '';
+      this.error = '';
     }
   }
 };
@@ -93,21 +105,27 @@ export default {
 
 <style scoped>
 .form {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr auto auto;
   gap: 10px;
-  margin-bottom: 20px;
-}
-
-.form input {
-  flex: 1;
+  margin-bottom: 10px;
+  padding: 4px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .cancel {
-  background: gray;
+  background: #64748b;
 }
 
 .error {
-  color: red;
+  color: #dc2626;
   font-size: 14px;
+}
+
+@media (max-width: 920px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
