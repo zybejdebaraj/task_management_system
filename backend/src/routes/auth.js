@@ -5,6 +5,7 @@ const {
   register,
   login,
   getUsers,
+  getMembers,
   adminCreateMember,
   getMySettings,
   updateMyProfile,
@@ -18,6 +19,7 @@ const isAdmin = require('../middleware/role');
 router.post('/register', register);
 router.post('/login', login);
 router.get('/users', auth, isAdmin, getUsers);
+router.get('/members', auth, isAdmin, getMembers);
 router.post('/admin/members', auth, isAdmin, adminCreateMember);
 router.get('/me', auth, getMySettings);
 router.put('/me/profile', auth, updateMyProfile);

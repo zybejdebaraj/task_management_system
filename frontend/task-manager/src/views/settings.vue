@@ -69,43 +69,6 @@
         </div>
         <button @click="savePreferences">Save Preferences</button>
       </section>
-
-      <section class="section">
-        <h3>Mailbox Connect (SMTP)</h3>
-        <p class="helper">Connect your own mailbox to send emails as your account.</p>
-        <div class="grid">
-          <div>
-            <label>SMTP Service (optional)</label>
-            <input v-model="mailbox.smtp_service" placeholder="gmail" />
-          </div>
-          <div>
-            <label>SMTP Host</label>
-            <input v-model="mailbox.smtp_host" placeholder="smtp.gmail.com" />
-          </div>
-          <div>
-            <label>SMTP Port</label>
-            <input v-model="mailbox.smtp_port" type="number" placeholder="587" />
-          </div>
-          <div>
-            <label>SMTP User</label>
-            <input v-model="mailbox.smtp_user" placeholder="you@email.com" />
-          </div>
-          <div>
-            <label>SMTP Password / App Password</label>
-            <input v-model="mailbox.smtp_pass" type="password" placeholder="Leave blank to keep current" />
-          </div>
-          <div>
-            <label>From Address</label>
-            <input v-model="mailbox.smtp_from" placeholder="Task Manager <you@email.com>" />
-          </div>
-        </div>
-        <label class="toggle">
-          <input v-model="mailbox.smtp_secure" type="checkbox" />
-          <span>Use secure SMTP (SSL/TLS)</span>
-        </label>
-        <p class="helper" v-if="mailbox.has_smtp_pass">SMTP password is already saved.</p>
-        <button @click="saveMailbox">Save Mailbox</button>
-      </section>
     </div>
   </div>
 </template>
@@ -130,16 +93,6 @@ export default {
         notifications_enabled: true,
         dark_mode: false
       },
-      mailbox: {
-        smtp_service: '',
-        smtp_host: '',
-        smtp_port: 587,
-        smtp_secure: false,
-        smtp_user: '',
-        smtp_pass: '',
-        smtp_from: '',
-        has_smtp_pass: false
-      },
       message: '',
       error: ''
     };
@@ -157,14 +110,6 @@ export default {
         this.profile.language = res.data.language || 'en';
         this.preferences.notifications_enabled = !!res.data.notifications_enabled;
         this.preferences.dark_mode = !!res.data.dark_mode;
-        this.mailbox.smtp_service = res.data.smtp_service || '';
-        this.mailbox.smtp_host = res.data.smtp_host || '';
-        this.mailbox.smtp_port = res.data.smtp_port || 587;
-        this.mailbox.smtp_secure = !!res.data.smtp_secure;
-        this.mailbox.smtp_user = res.data.smtp_user || '';
-        this.mailbox.smtp_from = res.data.smtp_from || '';
-        this.mailbox.has_smtp_pass = !!res.data.has_smtp_pass;
-        this.mailbox.smtp_pass = '';
         this.applyTheme(this.preferences.dark_mode);
       } catch (err) {
         this.error = err.response?.data?.message || 'Failed to load settings';
@@ -207,17 +152,6 @@ export default {
         this.error = err.response?.data?.message || 'Failed to update preferences';
       }
     },
-    async saveMailbox() {
-      this.clearMessages();
-      try {
-        const payload = { ...this.mailbox };
-        await api.put('/auth/me/mailbox', payload);
-        this.message = 'Mailbox settings updated';
-        await this.loadSettings();
-      } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to update mailbox settings';
-      }
-    }
   }
 };
 </script>

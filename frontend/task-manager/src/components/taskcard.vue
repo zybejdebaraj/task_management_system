@@ -1,37 +1,49 @@
 <template>
   <div class="card">
+    <button v-if="canManage" class="icon-btn edit-icon" type="button" @click="$emit('edit', task)" aria-label="Edit task">
+      <Pencil class="pencil" aria-hidden="true" />
+    </button>
+
     <div class="meta">
-      <strong>{{ task.title }}</strong>
       <p class="status" :class="task.status">{{ readableStatus(task.status) }}</p>
-      <p class="project">Project: {{ task.project_name || 'N/A' }}</p>
+      <strong>{{ task.title }}</strong>
     </div>
 
-    <div v-if="canManage" class="actions">
-      <button @click="$emit('edit', task)">Edit</button>
+    <div class="actions">
       <button
-        v-if="task.status !== 'todo'"
+        v-if="canMove && task.status === 'in-progress'"
         class="ghost"
         @click="$emit('move', { task, status: previousStatus(task.status) })"
       >
         Move Left
       </button>
       <button
-        v-if="task.status !== 'done'"
+        v-if="canMove && task.status !== 'done'"
         class="ghost"
         @click="$emit('move', { task, status: nextStatus(task.status) })"
       >
         Move Right
       </button>
-      <button @click="deleteTask">Delete</button>
+      <button v-if="canManage" @click="deleteTask">Delete</button>
     </div>
   </div>
 </template>
 
 <script>
 import api from '../api/api';
+import { Pencil } from 'lucide-vue-next';
 
 export default {
-  props: ['task', 'canManage'],
+  components: { Pencil },
+  props: ['task', 'canManage', 'viewerUserId'],
+
+  computed: {
+    canMove() {
+      if (this.canManage) return true;
+      if (!this.viewerUserId) return false;
+      return String(this.task.user_id) === String(this.viewerUserId);
+    }
+  },
 
   methods: {
     readableStatus(status) {
@@ -70,11 +82,12 @@ export default {
   display: grid;
   gap: 12px;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+  position: relative;
 }
 
 .meta strong {
   display: block;
-  margin-bottom: 8px;
+  margin-top: 6px;
   color: #1e1b4b;
   font-size: 15px;
 }
@@ -85,14 +98,35 @@ export default {
   gap: 10px;
 }
 
-.status {
-  font-weight: 700;
-  font-size: 13px;
+.icon-btn {
+  border: none;
+  background: transparent;
+  padding: 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #475569;
+  transition: 0.2s ease;
 }
 
-.project {
-  color: #666;
-  margin-top: 6px;
+.icon-btn:hover {
+  background: #eef2f7;
+  color: #0f172a;
+}
+
+.edit-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.pencil {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.status {
+  font-weight: 700;
   font-size: 13px;
 }
 

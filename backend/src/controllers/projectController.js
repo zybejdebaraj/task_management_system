@@ -112,10 +112,68 @@ const joinProject = async (req, res) => {
   }
 };
 
+const listProjectMembers = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const exists = await pool.query('SELECT id FROM projects WHERE id = $1', [id]);
+    if (!exists.rows.length) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const result = await pool.query(
+      `SELECT u.id, u.email, u.username, u.role
+       FROM project_members pm
+       INNER JOIN users u ON u.id = pm.user_id
+       WHERE pm.project_id = $1
+       ORDER BY u.email ASC`,
+      [id]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const addProjectMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { user_id } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ message: 'user_id is required' });
+    }
+
+    const projectExists = await pool.query('SELECT id FROM projects WHERE id = $1', [id]);
+    if (!projectExists.rows.length) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const userExists = await pool.query('SELECT id FROM users WHERE id = $1', [user_id]);
+    if (!userExists.rows.length) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    await pool.query(
+      `INSERT INTO project_members (project_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (project_id, user_id) DO NOTHING`,
+      [id, user_id]
+    );
+
+    res.status(201).json({ message: 'Member added to project' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   listProjects,
   createProject,
   updateProject,
   deleteProject,
   joinProject,
+  listProjectMembers,
+  addProjectMember,
 };

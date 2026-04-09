@@ -1,8 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-header">
-      <h2>Kanban Board</h2>
-      <p class="page-subtitle">Trello/Jira-style workflow by status.</p>
+      <h2>Tasks</h2>
     </div>
 
     <div class="card glass-card">
@@ -16,7 +15,7 @@
       />
 
       <p v-else class="helper">
-        You can view tasks from projects you joined. Ask admin to create or update tasks.
+        You can view tasks from projects you joined. Admins manage task creation and details.
       </p>
     </div>
 
@@ -29,6 +28,7 @@
         </option>
       </select>
     </div>
+    <p v-if="error" class="error">{{ error }}</p>
 
     <div class="board">
       <section class="column">
@@ -41,6 +41,7 @@
           :key="task.id"
           :task="task"
           :canManage="user?.role === 'admin'"
+          :viewerUserId="user?.id"
           @deleted="getTasks"
           @edit="handleEdit"
           @move="handleMove"
@@ -57,6 +58,7 @@
           :key="task.id"
           :task="task"
           :canManage="user?.role === 'admin'"
+          :viewerUserId="user?.id"
           @deleted="getTasks"
           @edit="handleEdit"
           @move="handleMove"
@@ -73,6 +75,7 @@
           :key="task.id"
           :task="task"
           :canManage="user?.role === 'admin'"
+          :viewerUserId="user?.id"
           @deleted="getTasks"
           @edit="handleEdit"
           @move="handleMove"
@@ -97,7 +100,10 @@ export default {
       editingTask: null,
       user: null,
       search: '',
-      selectedProject: ''
+      selectedProject: '',
+      error: '',
+      refreshTimer: null,
+      onFocus: null
     };
   },
   computed: {
@@ -121,6 +127,17 @@ export default {
     this.user = getUser();
     this.getProjects();
     this.getTasks();
+
+    // Keep member task list up-to-date (admin edits should reflect automatically).
+    this.refreshTimer = window.setInterval(() => {
+      this.getTasks();
+    }, 8000);
+    this.onFocus = () => this.getTasks();
+    window.addEventListener('focus', this.onFocus);
+  },
+  beforeUnmount() {
+    if (this.refreshTimer) window.clearInterval(this.refreshTimer);
+    if (this.onFocus) window.removeEventListener('focus', this.onFocus);
   },
   methods: {
     async getProjects() {
@@ -136,6 +153,7 @@ export default {
         const res = await api.get('/tasks');
         this.tasks = res.data;
       } catch (err) {
+        // avoid noisy errors during background refresh; keep last good list
         console.error(err);
       }
     },
@@ -147,16 +165,12 @@ export default {
       this.getTasks();
     },
     async handleMove({ task, status }) {
-      if (this.user?.role !== 'admin') return;
       try {
-        await api.put(`/tasks/${task.id}`, {
-          title: task.title,
-          status,
-          project_id: task.project_id
-        });
+        this.error = '';
+        await api.put(`/tasks/${task.id}`, { status });
         this.getTasks();
       } catch (err) {
-        console.error(err);
+        this.error = err.response?.data?.message || 'Failed to move task';
       }
     },
     cancelEdit() {
@@ -188,6 +202,12 @@ export default {
 
 .helper {
   color: #666;
+}
+
+.error {
+  color: #dc2626;
+  margin: 8px 0 12px;
+  font-size: 14px;
 }
 
 .board {

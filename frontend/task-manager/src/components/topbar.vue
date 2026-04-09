@@ -14,7 +14,7 @@ export default {
         '/tasks': 'Tasks',
         '/projects': 'Projects',
         '/members': 'Members',
-        '/inbox-email': 'Inbox / Email',
+        '/inbox-email': 'Messages',
         '/settings': 'Settings'
       };
       return map[this.$route.path] || 'Task Manager';

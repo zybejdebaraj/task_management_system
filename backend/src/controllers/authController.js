@@ -82,6 +82,20 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+exports.getMembers = async (req, res) => {
+  try {
+    const users = await pool.query(
+      `SELECT id, username, email, role, created_at
+       FROM users
+       WHERE role = 'member'
+       ORDER BY id DESC`
+    );
+    res.json(users.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.adminCreateMember = async (req, res) => {
   const { email, password, username } = req.body;
 

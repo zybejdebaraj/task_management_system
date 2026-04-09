@@ -111,6 +111,8 @@ export default {
     },
     renderCharts() {
       this.destroyCharts();
+      // When navigating quickly, the component can unmount before Chart.js draws.
+      if (!this.$refs.statusChartRef || !this.$refs.projectChartRef || !this.$refs.throughputChartRef) return;
 
       const statusCounts = {
         todo: this.tasks.filter((t) => t.status === 'todo').length,

@@ -3,17 +3,35 @@
     <div class="brand">
       <div class="logo">TM</div>
       <div>
-        <h3>Task Manager</h3>
+        <h3 class="text">Task Manager</h3>
       </div>
     </div>
 
     <div class="menu">
-      <router-link to="/dashboard" class="link">Dashboard</router-link>
-      <router-link to="/tasks" class="link">Tasks</router-link>
-      <router-link v-if="isAdminUser" to="/projects" class="link">Projects</router-link>
-      <router-link v-if="isAdminUser" to="/members" class="link">Members</router-link>
-      <router-link to="/inbox-email" class="link">Inbox/Email</router-link>
-      <router-link to="/settings" class="link">Settings</router-link>
+      <router-link to="/dashboard" class="link">
+        <LayoutDashboard class="icon" />
+        Dashboard
+      </router-link>
+      <router-link to="/tasks" class="link">
+        <ListTodo class="icon" />
+        Tasks
+      </router-link>
+      <router-link v-if="isAdminUser" to="/projects" class="link">
+        <FolderKanban class="icon" />
+        Projects
+      </router-link>
+      <router-link v-if="isAdminUser" to="/members" class="link">
+        <Users class="icon" />
+        Members
+      </router-link>
+      <router-link to="/inbox-email" class="link">
+        <Mail class="icon" />
+        Messages
+      </router-link>
+      <router-link to="/settings" class="link">
+        <Settings class="icon" />
+        Settings
+      </router-link>
     </div>
 
     <div class="role-footer">
@@ -24,8 +42,24 @@
 
 <script>
 import { isAdmin } from '@/utils/auth';
+import {
+  LayoutDashboard,
+  ListTodo,
+  FolderKanban,
+  Users,
+  Mail,
+  Settings
+} from 'lucide-vue-next';
 
 export default {
+  components: {
+    LayoutDashboard,
+    ListTodo,
+    FolderKanban,
+    Users,
+    Mail,
+    Settings
+  },
   data() {
     return {
       isAdminUser: false
@@ -68,6 +102,9 @@ export default {
   font-weight: 700;
 }
 
+.text{
+  margin-top: 5px;
+}
 .menu {
   display: grid;
   gap: 8px;
@@ -80,6 +117,9 @@ export default {
   padding: 10px 12px;
   border-radius: 10px;
   transition: 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .link:hover {
@@ -90,6 +130,13 @@ export default {
 .link.router-link-active {
   background: rgba(99, 102, 241, 0.35);
   color: #fff;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  opacity: 0.95;
 }
 
 .role-footer {

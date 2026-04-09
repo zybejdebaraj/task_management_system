@@ -16,14 +16,37 @@
 
     <p v-else class="helper">Join projects to see their tasks.</p>
 
-    <ul class="project-list">
-      <li v-for="project in projects" :key="project.id" class="card glass-card project-item">
-        <strong class="name">{{ project.name }}</strong>
-        <p class="desc">{{ project.description || 'No description' }}</p>
+    <ul class="project-grid">
+      <li v-for="project in projects" :key="project.id" class="card glass-card project-card">
+        <button
+          v-if="isAdminUser"
+          class="icon-btn trash-icon"
+          type="button"
+          aria-label="Delete project"
+          @click="deleteProject(project.id)"
+        >
+          <Trash2 class="icon" aria-hidden="true" />
+        </button>
+        <button
+          v-if="isAdminUser"
+          class="icon-btn edit-icon"
+          type="button"
+          aria-label="Edit project"
+          @click="startEdit(project)"
+        >
+          <Pencil class="icon" aria-hidden="true" />
+        </button>
+
+        <div>
+          <strong class="name">{{ project.name }}</strong>
+          <p class="desc">{{ project.description || 'No description' }}</p>
+        </div>
+
         <div class="actions">
-          <button v-if="isAdminUser" @click="startEdit(project)">Edit</button>
-          <button v-if="isAdminUser" class="danger" @click="deleteProject(project.id)">Delete</button>
-          <button v-else @click="joinProject(project.id)">Join</button>
+          <button v-if="!isAdminUser" class="join-btn" @click="joinProject(project.id)">
+            <Users class="icon" aria-hidden="true" />
+            Join
+          </button>
         </div>
       </li>
     </ul>
@@ -33,8 +56,10 @@
 <script>
 import api from '../api/api';
 import { isAdmin } from '@/utils/auth';
+import { Pencil, Trash2, Users } from 'lucide-vue-next';
 
 export default {
+  components: { Pencil, Trash2, Users },
   data() {
     return {
       name: '',
@@ -122,16 +147,21 @@ export default {
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
-.project-list {
-  list-style: none;
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
   padding: 0;
   margin: 0;
-  display: grid;
-  gap: 12px;
+  list-style: none;
 }
 
-.project-item {
+.project-card {
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-height: 140px;
 }
 
 .name {
@@ -139,14 +169,17 @@ export default {
 }
 
 .desc {
-  margin-top: 8px;
   color: #64748b;
+  font-size: 13px;
+  line-height: 1.35;
+  margin: 0;
 }
 
 .actions {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: auto;
+  align-items: center;
 }
 
 .cancel {
@@ -164,6 +197,51 @@ export default {
 
 .danger:hover {
   background: #b91c1c;
+}
+
+.icon-btn {
+  border: none;
+  background: transparent;
+  padding: 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #475569;
+  transition: 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: #eef2f7;
+  color: #0f172a;
+}
+
+.edit-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.trash-icon {
+  position: absolute;
+  top: 10px;
+  right: 44px;
+  color: #b91c1c;
+}
+
+.trash-icon:hover {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.join-btn {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
 }
 
 @media (max-width: 860px) {

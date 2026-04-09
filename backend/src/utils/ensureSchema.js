@@ -68,10 +68,16 @@ const ensureSchema = async () => {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS smtp_user VARCHAR(255);`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS smtp_pass TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS smtp_from VARCHAR(255);`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE SET NULL;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;`);
+  await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
+
+  // Backfill legacy rows so dashboards can compute completion times.
+  await pool.query(`UPDATE tasks SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL;`);
+  await pool.query(`UPDATE tasks SET completed_at = CURRENT_TIMESTAMP WHERE status = 'done' AND completed_at IS NULL;`);
 };
 
 module.exports = ensureSchema;

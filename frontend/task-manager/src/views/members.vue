@@ -66,7 +66,7 @@ export default {
   methods: {
     async fetchUsers() {
       try {
-        const res = await api.get('/auth/users');
+        const res = await api.get('/auth/members');
         this.users = res.data;
       } catch (err) {
         this.error = err.response?.data?.message || 'Failed to load users';
