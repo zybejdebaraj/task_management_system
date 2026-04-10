@@ -1,87 +1,100 @@
 <template>
-  <div class="page-shell">
-    <div class="page-header">
-      <h2>Tasks</h2>
+  <div>
+    <div class="page-shell">
+      <div class="page-header">
+        <div class="header-row">
+          <button v-if="user?.role === 'admin'" class="add-btn" type="button" @click="openAddTaskModal">
+            Add task
+          </button>
+        </div>
+      </div>
+
+      <div v-if="user?.role !== 'admin'" class="card glass-card">
+        <p class="helper">
+          You can view tasks from projects you joined. Admins manage task creation and details.
+        </p>
+      </div>
+
+      <div class="toolbar card glass-card">
+        <input v-model="search" placeholder="Search tasks..." />
+        <select v-model="selectedProject">
+          <option value="">All projects</option>
+          <option v-for="project in projects" :key="project.id" :value="project.name">
+            {{ project.name }}
+          </option>
+        </select>
+      </div>
+      <p v-if="error" class="error">{{ error }}</p>
+
+      <div class="board">
+        <section class="column">
+          <div class="column-head">
+            <h3>Todo</h3>
+            <span>{{ groupedTasks.todo.length }}</span>
+          </div>
+          <TaskCard
+            v-for="task in groupedTasks.todo"
+            :key="task.id"
+            :task="task"
+            :canManage="user?.role === 'admin'"
+            :viewerUserId="user?.id"
+            @deleted="getTasks"
+            @edit="handleEdit"
+            @move="handleMove"
+          />
+        </section>
+
+        <section class="column">
+          <div class="column-head">
+            <h3>In Progress</h3>
+            <span>{{ groupedTasks['in-progress'].length }}</span>
+          </div>
+          <TaskCard
+            v-for="task in groupedTasks['in-progress']"
+            :key="task.id"
+            :task="task"
+            :canManage="user?.role === 'admin'"
+            :viewerUserId="user?.id"
+            @deleted="getTasks"
+            @edit="handleEdit"
+            @move="handleMove"
+          />
+        </section>
+
+        <section class="column">
+          <div class="column-head">
+            <h3>Done</h3>
+            <span>{{ groupedTasks.done.length }}</span>
+          </div>
+          <TaskCard
+            v-for="task in groupedTasks.done"
+            :key="task.id"
+            :task="task"
+            :canManage="user?.role === 'admin'"
+            :viewerUserId="user?.id"
+            @deleted="getTasks"
+            @edit="handleEdit"
+            @move="handleMove"
+          />
+        </section>
+      </div>
     </div>
 
-    <div class="card glass-card">
+    <BaseModal v-model="showTaskModal" :title="editingTask ? 'Update task' : 'Add task'">
       <TaskForm
         v-if="user?.role === 'admin'"
         :editingTask="editingTask"
         :projects="projects"
-        @taskCreated="getTasks"
+        @taskCreated="
+          () => {
+            showTaskModal = false;
+            getTasks();
+          }
+        "
         @taskUpdated="handleUpdated"
         @cancelEdit="cancelEdit"
       />
-
-      <p v-else class="helper">
-        You can view tasks from projects you joined. Admins manage task creation and details.
-      </p>
-    </div>
-
-    <div class="toolbar card glass-card">
-      <input v-model="search" placeholder="Search tasks..." />
-      <select v-model="selectedProject">
-        <option value="">All projects</option>
-        <option v-for="project in projects" :key="project.id" :value="project.name">
-          {{ project.name }}
-        </option>
-      </select>
-    </div>
-    <p v-if="error" class="error">{{ error }}</p>
-
-    <div class="board">
-      <section class="column">
-        <div class="column-head">
-          <h3>Todo</h3>
-          <span>{{ groupedTasks.todo.length }}</span>
-        </div>
-        <TaskCard
-          v-for="task in groupedTasks.todo"
-          :key="task.id"
-          :task="task"
-          :canManage="user?.role === 'admin'"
-          :viewerUserId="user?.id"
-          @deleted="getTasks"
-          @edit="handleEdit"
-          @move="handleMove"
-        />
-      </section>
-
-      <section class="column">
-        <div class="column-head">
-          <h3>In Progress</h3>
-          <span>{{ groupedTasks['in-progress'].length }}</span>
-        </div>
-        <TaskCard
-          v-for="task in groupedTasks['in-progress']"
-          :key="task.id"
-          :task="task"
-          :canManage="user?.role === 'admin'"
-          :viewerUserId="user?.id"
-          @deleted="getTasks"
-          @edit="handleEdit"
-          @move="handleMove"
-        />
-      </section>
-
-      <section class="column">
-        <div class="column-head">
-          <h3>Done</h3>
-          <span>{{ groupedTasks.done.length }}</span>
-        </div>
-        <TaskCard
-          v-for="task in groupedTasks.done"
-          :key="task.id"
-          :task="task"
-          :canManage="user?.role === 'admin'"
-          :viewerUserId="user?.id"
-          @deleted="getTasks"
-          @edit="handleEdit"
-          @move="handleMove"
-        />
-      </section>
-    </div>
+    </BaseModal>
   </div>
 </template>
 
@@ -90,9 +103,10 @@ import TaskCard from '../components/taskcard.vue';
 import TaskForm from '../components/taskform.vue';
 import api from '../api/api';
 import { getUser } from '@/utils/auth';
+import BaseModal from '@/components/baseModal.vue';
 
 export default {
-  components: { TaskCard, TaskForm },
+  components: { TaskCard, TaskForm, BaseModal },
   data() {
     return {
       tasks: [],
@@ -103,7 +117,8 @@ export default {
       selectedProject: '',
       error: '',
       refreshTimer: null,
-      onFocus: null
+      onFocus: null,
+      showTaskModal: false
     };
   },
   computed: {
@@ -159,9 +174,11 @@ export default {
     },
     handleEdit(task) {
       this.editingTask = task;
+      this.showTaskModal = true;
     },
     handleUpdated() {
       this.editingTask = null;
+      this.showTaskModal = false;
       this.getTasks();
     },
     async handleMove({ task, status }) {
@@ -175,12 +192,27 @@ export default {
     },
     cancelEdit() {
       this.editingTask = null;
+      this.showTaskModal = false;
+    },
+    openAddTaskModal() {
+      this.editingTask = null;
+      this.showTaskModal = true;
     }
   }
 };
 </script>
 
 <style scoped>
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.add-btn {
+  white-space: nowrap;
+}
 .container {
   width: 100%;
 }
@@ -248,6 +280,10 @@ export default {
 }
 
 @media (max-width: 980px) {
+  .header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
   .toolbar {
     grid-template-columns: 1fr;
   }

@@ -5,6 +5,10 @@
       <p class="subtitle">Create your account to start managing tasks.</p>
 
       <div class="form-group">
+        <label>Username</label>
+        <input v-model="username" placeholder="Username" />
+      </div>
+      <div class="form-group">
         <label>Email</label>
         <input v-model="email" placeholder="Email" />
       </div>
@@ -21,8 +25,6 @@
         </select>
       </div>
 
-      <p v-if="error" class="error">{{ error }}</p>
-
       <button class="submit-btn" @click="register">Register</button>
 
       <p class="link" @click="$router.push('/login')">
@@ -34,10 +36,12 @@
 
 <script>
 import api from '../api/api';
+import { toast } from '@/utils/toast';
 
 export default {
   data() {
     return {
+      username: '',
       email: '',
       password: '',
       role: 'member',
@@ -49,7 +53,7 @@ export default {
     async register() {
       // ✅ VALIDATION FIRST
       if (!this.email || !this.password) {
-        this.error = 'All fields are required';
+        toast.error('Email and password are required');
         return;
       }
 
@@ -57,16 +61,17 @@ export default {
 
       try {
         await api.post('/auth/register', {
+          username: this.username?.trim() || null,
           email: this.email,
           password: this.password,
           role: this.role
         });
 
-        alert('Registered successfully');
+        toast.success('Registered successfully');
         this.$router.push('/login');
 
       } catch (err) {
-        this.error = err.response?.data?.message || 'Register failed';
+        toast.error(err.response?.data?.message || 'Register failed');
       }
     }
   }

@@ -51,16 +51,6 @@ exports.createTask = async (req, res) => {
       return res.status(400).json({ message: 'Assignee is required' });
     }
 
-    // Auto-align: ensure assignee is a member of the selected project.
-    if (project_id) {
-      await pool.query(
-        `INSERT INTO project_members (project_id, user_id)
-         VALUES ($1, $2)
-         ON CONFLICT (project_id, user_id) DO NOTHING`,
-        [project_id, assigneeId]
-      );
-    }
-
     const assigneeIsProjectMember = await pool.query(
       `SELECT 1
        FROM project_members
@@ -175,14 +165,6 @@ exports.updateTask = async (req, res) => {
 
     const nextAssigneeId = user_id ?? existing.user_id;
     if (nextAssigneeId && finalProjectId) {
-      // Auto-align: ensure assignee is a member of the selected project.
-      await pool.query(
-        `INSERT INTO project_members (project_id, user_id)
-         VALUES ($1, $2)
-         ON CONFLICT (project_id, user_id) DO NOTHING`,
-        [finalProjectId, nextAssigneeId]
-      );
-
       const assigneeIsProjectMember = await pool.query(
         `SELECT 1
          FROM project_members

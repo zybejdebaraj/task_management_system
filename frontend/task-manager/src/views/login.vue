@@ -13,8 +13,6 @@
         <input v-model="password" type="password" placeholder="Password" />
       </div>
 
-      <p v-if="error" class="error">{{ error }}</p>
-
       <button class="submit-btn" @click="login">Login</button>
 
       <p class="link" @click="$router.push('/register')">
@@ -26,6 +24,7 @@
 
 <script>
 import api from '../api/api';
+import { toast } from '@/utils/toast';
 
 export default {
   data() {
@@ -39,7 +38,7 @@ export default {
   methods: {
     async login() {
       if (!this.email || !this.password) {
-        this.error = 'All fields are required';
+        toast.error('Email and password are required');
         return;
       }
 
@@ -52,10 +51,11 @@ export default {
         });
 
         localStorage.setItem('token', res.data.token);
+        toast.success('Logged in');
         this.$router.push('/dashboard');
 
       } catch (err) {
-        this.error = err.response?.data?.message || 'Login failed';
+        toast.error(err.response?.data?.message || 'Login failed');
       }
     }
   }

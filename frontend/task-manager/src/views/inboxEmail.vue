@@ -56,8 +56,6 @@
               <textarea v-model="emailForm.body" rows="12"></textarea>
             </div>
             <button @click="sendEmail">Send</button>
-            <p v-if="sendMessage" class="success">{{ sendMessage }}</p>
-            <p v-if="sendError" class="error">{{ sendError }}</p>
           </div>
         </div>
       </section>
@@ -67,6 +65,7 @@
 
 <script>
 import api from '../api/api';
+import { toast } from '@/utils/toast';
 
 export default {
   data() {
@@ -74,8 +73,6 @@ export default {
       activePanel: 'inbox',
       selectedTemplateId: 'welcome',
       copied: false,
-      sendMessage: '',
-      sendError: '',
       emailForm: {
         to: '',
         subject: '',
@@ -170,19 +167,17 @@ export default {
       }
     },
     async sendEmail() {
-      this.sendMessage = '';
-      this.sendError = '';
-
       if (!this.emailForm.to || !this.emailForm.subject || !this.emailForm.body) {
-        this.sendError = 'Please fill recipient, subject, and body.';
+        toast.error('Please fill recipient, subject, and body.');
         return;
       }
 
       try {
         const res = await api.post('/email/send', this.emailForm);
-        this.sendMessage = res.data.message || 'Email sent successfully';
+        toast.success(res.data.message || 'Email sent successfully');
+        this.emailForm.to = '';
       } catch (err) {
-        this.sendError = err.response?.data?.message || 'Failed to send email';
+        toast.error(err.response?.data?.message || 'Failed to send email');
       }
     }
   }

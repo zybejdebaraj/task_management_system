@@ -1,60 +1,106 @@
 <template>
-  <div class="page-shell">
-    <div class="card glass-card">
-      <h2>Members</h2>
-      <p v-if="!isAdminUser">Only admins can add members to the system.</p>
+  <div>
+    <div class="page-shell">
+      <div class="card glass-card">
+        <p v-if="!isAdminUser">Only admins can add members to the system.</p>
 
-      <div v-else class="members-panel">
-        <h3>Add New Member</h3>
-        <div class="form-grid">
-          <input v-model="email" type="email" placeholder="Member email" />
-          <input v-model="password" type="password" placeholder="Temporary password" />
-          <button @click="createMember">Add Member</button>
-        </div>
-        <p v-if="message" class="success">{{ message }}</p>
-        <p v-if="error" class="error">{{ error }}</p>
+        <div v-else class="members-panel">
+          <div class="panel-head">
+            <button class="add-btn" type="button" @click="openAddModal">Add member</button>
+          </div>
+          <p v-if="message" class="success">{{ message }}</p>
+          <p v-if="error" class="error">{{ error }}</p>
 
-        <h3 class="list-title">System Members</h3>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="user in users" :key="user.id">
-                <td>{{ user.id }}</td>
-                <td>{{ user.email }}</td>
-                <td>
-                  <span class="role" :class="user.role">{{ user.role }}</span>
-                </td>
-                <td>{{ formatDate(user.created_at) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Created</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="user in users" :key="user.id">
+                  <td>{{ user.email }}</td>
+                  <td>
+                    <span class="role" :class="user.role">{{ user.role }}</span>
+                  </td>
+                  <td>{{ formatDate(user.created_at) }}</td>
+                  <td class="actions">
+                    <button
+                      class="icon-btn"
+                      type="button"
+                      aria-label="Edit member"
+                      @click="startEdit(user)"
+                    >
+                      <Pencil class="icon" aria-hidden="true" />
+                    </button>
+                    <button
+                      class="icon-btn danger-icon"
+                      type="button"
+                      aria-label="Delete member"
+                      @click="deleteMember(user.id)"
+                    >
+                      <Trash2 class="icon" aria-hidden="true" />
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
+
+    <BaseModal v-model="showMemberModal" :title="editingMemberId ? 'Update member' : 'Add member'">
+      <div class="modal-grid">
+        <div>
+          <label>Username</label>
+          <input v-model="username" placeholder="Username" />
+        </div>
+        <div>
+          <label>Email</label>
+          <input v-model="email" type="email" placeholder="Member email" />
+        </div>
+        <div>
+          <label>{{ editingMemberId ? 'New password (optional)' : 'Temporary password' }}</label>
+          <input
+            v-model="password"
+            type="password"
+            :placeholder="editingMemberId ? 'Leave blank to keep current' : 'Temporary password'"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <button class="ghost" type="button" @click="closeMemberModal">Cancel</button>
+        <button type="button" @click="submitMember">{{ editingMemberId ? 'Update' : 'Add' }}</button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script>
 import api from '../api/api';
 import { isAdmin } from '@/utils/auth';
+import { toast } from '@/utils/toast';
+import { Pencil, Trash2 } from 'lucide-vue-next';
+import BaseModal from '@/components/baseModal.vue';
 
 export default {
+  components: { Pencil, Trash2, BaseModal },
   data() {
     return {
+      username: '',
       email: '',
       password: '',
       users: [],
       error: '',
       message: '',
-      isAdminUser: false
+      isAdminUser: false,
+      editingMemberId: null,
+      showMemberModal: false
     };
   },
   async mounted() {
@@ -83,16 +129,83 @@ export default {
 
       try {
         await api.post('/auth/admin/members', {
+          username: this.username || undefined,
           email: this.email,
           password: this.password
         });
 
-        this.message = 'Member added successfully';
+        toast.success('Member added');
+        this.username = '';
         this.email = '';
         this.password = '';
         await this.fetchUsers();
       } catch (err) {
         this.error = err.response?.data?.message || 'Failed to add member';
+        toast.error(this.error);
+      }
+    },
+    async updateMember() {
+      this.error = '';
+      this.message = '';
+
+      if (!this.email) {
+        this.error = 'Email is required';
+        toast.error(this.error);
+        return;
+      }
+
+      try {
+        await api.put(`/auth/admin/members/${this.editingMemberId}`, {
+          username: this.username || undefined,
+          email: this.email,
+          password: this.password || undefined
+        });
+        toast.success('Member updated');
+        this.cancelEdit();
+        await this.fetchUsers();
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Failed to update member';
+        toast.error(this.error);
+      }
+    },
+    submitMember() {
+      if (this.editingMemberId) return this.updateMember();
+      return this.createMember();
+    },
+    openAddModal() {
+      this.editingMemberId = null;
+      this.username = '';
+      this.email = '';
+      this.password = '';
+      this.showMemberModal = true;
+    },
+    startEdit(user) {
+      this.editingMemberId = user.id;
+      this.username = user.username || '';
+      this.email = user.email;
+      this.password = '';
+      this.showMemberModal = true;
+    },
+    closeMemberModal() {
+      this.showMemberModal = false;
+      this.cancelEdit();
+    },
+    cancelEdit() {
+      this.editingMemberId = null;
+      this.username = '';
+      this.email = '';
+      this.password = '';
+    },
+    async deleteMember(id) {
+      this.error = '';
+      this.message = '';
+      try {
+        await api.delete(`/auth/admin/members/${id}`);
+        toast.success('Member deleted');
+        await this.fetchUsers();
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Failed to delete member';
+        toast.error(this.error);
       }
     },
     formatDate(value) {
@@ -124,15 +237,16 @@ export default {
   margin-top: 16px;
 }
 
-.members-panel h3 {
+.panel-head {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 10px;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 10px;
-  margin-bottom: 10px;
+.add-btn {
+  white-space: nowrap;
 }
 
 .success {
@@ -145,12 +259,58 @@ export default {
   margin-bottom: 8px;
 }
 
+.actions {
+  text-align: right;
+}
+
+.icon-btn {
+  border: none;
+  background: transparent;
+  padding: 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #475569;
+  transition: 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: #eef2f7;
+  color: #0f172a;
+}
+
+.ghost {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.ghost:hover {
+  background: #cbd5e1;
+}
+
+.danger-icon {
+  color: #b91c1c;
+}
+
+.danger-icon:hover {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
 .list-title {
-  margin-top: 16px;
+  margin: 0;
 }
 
 .table-wrap {
-  overflow-x: auto;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
 }
 
 table {
@@ -189,8 +349,26 @@ th {
 }
 
 @media (max-width: 900px) {
-  .form-grid {
-    grid-template-columns: 1fr;
+  .panel-head {
+    flex-direction: column;
+    align-items: stretch;
   }
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.modal-grid > div:last-child {
+  grid-column: 1 / -1;
+}
+
+.modal-grid label {
+  display: block;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 6px;
 }
 </style>

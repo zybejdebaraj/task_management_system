@@ -1,38 +1,50 @@
 <template>
   <div>
     <div class="form">
-      <input v-model="title" placeholder="New task..." />
-      <select v-model="projectId">
-        <option disabled value="">Select project</option>
-        <option v-for="project in projects" :key="project.id" :value="project.id">
-          {{ project.name }}
-        </option>
-      </select>
+      <div class="field">
+        <label>Title</label>
+        <input v-model="title" placeholder="New task..." />
+      </div>
 
-      <select v-model="assigneeId">
-        <option disabled value="">{{ projectId ? 'Assign to member' : 'Select project first' }}</option>
-        <option
-          v-for="member in assigneeOptions"
-          :key="member.id"
-          :value="member.id"
-        >
-          {{ member.email }}{{ member.inProject ? '' : ' (not in this project)' }}
-        </option>
-      </select>
+      <div class="field">
+        <label>Project</label>
+        <select v-model="projectId">
+          <option disabled value="">Select project</option>
+          <option v-for="project in projects" :key="project.id" :value="project.id">
+            {{ project.name }}
+          </option>
+        </select>
+      </div>
 
-      <select v-model="status">
-        <option value="todo">Todo</option>
-        <option value="in-progress">In Progress</option>
-        <option value="done">Done</option>
-      </select>
+      <div class="field">
+        <label>Assign to member</label>
+        <select v-model="assigneeId">
+          <option disabled value="">
+            {{ projectId ? (assigneeOptions.length ? 'Assign to member' : 'No members in this project') : 'Select project first' }}
+          </option>
+          <option v-for="member in assigneeOptions" :key="member.id" :value="member.id">
+            {{ member.email }}
+          </option>
+        </select>
+      </div>
 
-      <button @click="createTask">
-        {{ editingTask ? 'Update' : 'Add' }}
-      </button>
+      <div class="field">
+        <label>Status</label>
+        <select v-model="status">
+          <option value="todo">Todo</option>
+          <option value="in-progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
 
-      <button v-if="editingTask" @click="cancelEdit" class="cancel">
-        Cancel
-      </button>
+      <div class="actions">
+        <button type="button" @click="createTask">
+          {{ editingTask ? 'Update' : 'Add' }}
+        </button>
+        <button v-if="editingTask" type="button" @click="cancelEdit" class="cancel">
+          Cancel
+        </button>
+      </div>
     </div>
     <p v-if="error" class="error">{{ error }}</p>
   </div>
@@ -41,6 +53,7 @@
 <script>
 import api from '../api/api';
 import { getUser } from '@/utils/auth';
+import { toast } from '@/utils/toast';
 
 export default {
   props: ['editingTask', 'projects'],
@@ -66,10 +79,7 @@ export default {
       const memberIdSet = new Set(this.projectMembers.map((m) => Number(m.id)));
       return this.users
         .filter((u) => u.role !== 'admin')
-        .map((u) => ({
-          ...u,
-          inProject: memberIdSet.has(Number(u.id))
-        }));
+        .filter((u) => memberIdSet.has(Number(u.id)));
     }
   },
 
@@ -155,19 +165,12 @@ export default {
       try {
         this.error = '';
 
-        if (this.isAdminUser && this.projectId && this.assigneeId) {
-          const selected = this.assigneeOptions.find((m) => String(m.id) === String(this.assigneeId));
-          if (selected && !selected.inProject) {
-            await api.post(`/projects/${this.projectId}/members`, { user_id: this.assigneeId });
-            await this.refreshAssigneeData();
-          }
-        }
-
         if (this.editingTask) {
           const payload = { title: this.title, status: this.status };
           if (this.projectId) payload.project_id = this.projectId;
           if (this.assigneeId) payload.user_id = this.assigneeId;
           await api.put(`/tasks/${this.editingTask.id}`, payload);
+          toast.success('Task updated');
           this.$emit('taskUpdated');
         } else {
           await api.post('/tasks', {
@@ -176,6 +179,7 @@ export default {
             project_id: this.projectId,
             user_id: this.assigneeId
           });
+          toast.success('Task created');
           this.$emit('taskCreated');
         }
 
@@ -183,6 +187,7 @@ export default {
 
       } catch (err) {
         this.error = err.response?.data?.message || 'Failed to save task';
+        toast.error(this.error);
       }
     },
 
@@ -207,12 +212,26 @@ export default {
 <style scoped>
 .form {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr 0.9fr auto auto;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 12px;
   margin-bottom: 10px;
   padding: 4px;
   border-radius: 12px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .cancel {
@@ -224,9 +243,4 @@ export default {
   font-size: 14px;
 }
 
-@media (max-width: 920px) {
-  .form {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

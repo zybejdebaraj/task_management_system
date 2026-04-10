@@ -1,12 +1,6 @@
 <template>
   <div class="page-shell">
     <div class="card glass-card">
-      <h2>Settings</h2>
-      <p class="sub">Manage your account, preferences, and personalization.</p>
-
-      <p v-if="message" class="success">{{ message }}</p>
-      <p v-if="error" class="error">{{ error }}</p>
-
       <section class="section">
         <h3>Profile</h3>
         <div class="grid">
@@ -75,6 +69,7 @@
 
 <script>
 import api from '../api/api';
+import { toast } from '@/utils/toast';
 
 export default {
   data() {
@@ -112,7 +107,7 @@ export default {
         this.preferences.dark_mode = !!res.data.dark_mode;
         this.applyTheme(this.preferences.dark_mode);
       } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to load settings';
+        toast.error(err.response?.data?.message || 'Failed to load settings');
       }
     },
     applyTheme(isDark) {
@@ -126,9 +121,9 @@ export default {
       this.clearMessages();
       try {
         await api.put('/auth/me/profile', this.profile);
-        this.message = 'Profile updated';
+        toast.success('Profile updated');
       } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to update profile';
+        toast.error(err.response?.data?.message || 'Failed to update profile');
       }
     },
     async savePassword() {
@@ -137,9 +132,9 @@ export default {
         await api.put('/auth/me/password', this.password);
         this.password.currentPassword = '';
         this.password.newPassword = '';
-        this.message = 'Password changed successfully';
+        toast.success('Password changed successfully');
       } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to change password';
+        toast.error(err.response?.data?.message || 'Failed to change password');
       }
     },
     async savePreferences() {
@@ -147,9 +142,9 @@ export default {
       try {
         await api.put('/auth/me/preferences', this.preferences);
         this.applyTheme(this.preferences.dark_mode);
-        this.message = 'Preferences updated';
+        toast.success('Preferences updated');
       } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to update preferences';
+        toast.error(err.response?.data?.message || 'Failed to update preferences');
       }
     },
   }
@@ -175,9 +170,7 @@ export default {
 }
 
 .section {
-  border-top: 1px solid #e2e8f0;
-  margin-top: 16px;
-  padding-top: 16px;
+  padding-top: 10px;
 }
 
 .section h3 {

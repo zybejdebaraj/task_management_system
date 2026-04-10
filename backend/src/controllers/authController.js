@@ -96,6 +96,68 @@ exports.getMembers = async (req, res) => {
   }
 };
 
+exports.adminDeleteMember = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const existing = await pool.query('SELECT id, role FROM users WHERE id = $1', [id]);
+    if (!existing.rows.length) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (existing.rows[0].role !== 'member') {
+      return res.status(400).json({ message: 'Only members can be deleted from this page' });
+    }
+
+    const deleted = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
+    res.json({ message: 'Member deleted', id: deleted.rows[0].id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.adminUpdateMember = async (req, res) => {
+  const { id } = req.params;
+  const { email, password, username } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const existing = await pool.query('SELECT id, role FROM users WHERE id = $1', [id]);
+    if (!existing.rows.length) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (existing.rows[0].role !== 'member') {
+      return res.status(400).json({ message: 'Only members can be updated from this page' });
+    }
+
+    const emailTaken = await pool.query('SELECT id FROM users WHERE email = $1 AND id <> $2', [email, id]);
+    if (emailTaken.rows.length) {
+      return res.status(400).json({ message: 'Email already in use' });
+    }
+
+    let hashedPassword = null;
+    if (typeof password === 'string' && password.trim() !== '') {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    const updated = await pool.query(
+      `UPDATE users
+       SET email = $1,
+           username = $2,
+           password = COALESCE($3, password)
+       WHERE id = $4
+       RETURNING id, username, email, role, created_at`,
+      [email, username || null, hashedPassword, id]
+    );
+
+    res.json(updated.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.adminCreateMember = async (req, res) => {
   const { email, password, username } = req.body;
 

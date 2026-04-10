@@ -35,7 +35,7 @@
     </div>
 
     <div class="role-footer">
-      Role: <strong>{{ isAdminUser ? 'Admin' : 'Member' }}</strong>
+     <strong>{{ isAdminUser ? 'Admin' : 'Member' }}</strong>
     </div>
   </aside>
 </template>

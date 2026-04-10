@@ -6,6 +6,8 @@ const {
   login,
   getUsers,
   getMembers,
+  adminDeleteMember,
+  adminUpdateMember,
   adminCreateMember,
   getMySettings,
   updateMyProfile,
@@ -21,6 +23,8 @@ router.post('/login', login);
 router.get('/users', auth, isAdmin, getUsers);
 router.get('/members', auth, isAdmin, getMembers);
 router.post('/admin/members', auth, isAdmin, adminCreateMember);
+router.delete('/admin/members/:id', auth, isAdmin, adminDeleteMember);
+router.put('/admin/members/:id', auth, isAdmin, adminUpdateMember);
 router.get('/me', auth, getMySettings);
 router.put('/me/profile', auth, updateMyProfile);
 router.put('/me/password', auth, updateMyPassword);

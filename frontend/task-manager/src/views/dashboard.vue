@@ -1,7 +1,6 @@
 <template>
   <div class="page-shell">
     <section class="hero glass-card">
-      <h2>{{ isAdminUser ? 'Admin Dashboard' : 'Member Dashboard' }}</h2>
       <p>
         {{ isAdminUser
           ? 'Track team output, project load, and completion speed.'
@@ -82,7 +81,7 @@ export default {
         totalTasks,
         doneTasks,
         totalProjects: this.projects.length,
-        avgCompletionText: avgCompletionHours ? `${avgCompletionHours.toFixed(1)} hrs` : 'N/A'
+        avgCompletionText: completionHours.length ? `${avgCompletionHours.toFixed(1)} hrs` : 'N/A'
       };
     }
   },

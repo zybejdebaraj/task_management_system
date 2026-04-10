@@ -8,15 +8,17 @@
       </main>
     </div>
     <router-view v-else />
+    <ToastHost />
   </div>
 </template>
 
 <script>
 import Navbar from './components/navbar.vue';
 import Topbar from './components/topbar.vue';
+import ToastHost from './components/toastHost.vue';
 
 export default {
-  components: { Navbar, Topbar },
+  components: { Navbar, Topbar, ToastHost },
 
   computed: {
     showNavbar() {

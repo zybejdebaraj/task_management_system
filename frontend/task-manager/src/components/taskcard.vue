@@ -1,6 +1,12 @@
 <template>
   <div class="card">
-    <button v-if="canManage" class="icon-btn edit-icon" type="button" @click="$emit('edit', task)" aria-label="Edit task">
+    <button
+      v-if="canManage && task.status !== 'done'"
+      class="icon-btn edit-icon"
+      type="button"
+      @click="$emit('edit', task)"
+      aria-label="Edit task"
+    >
       <Pencil class="pencil" aria-hidden="true" />
     </button>
 
@@ -32,6 +38,7 @@
 <script>
 import api from '../api/api';
 import { Pencil } from 'lucide-vue-next';
+import { toast } from '@/utils/toast';
 
 export default {
   components: { Pencil },
@@ -65,8 +72,9 @@ export default {
       try {
         await api.delete(`/tasks/${this.task.id}`);
         this.$emit('deleted');
+        toast.success('Task deleted');
       } catch (err) {
-        console.error(err);
+        toast.error(err.response?.data?.message || 'Failed to delete task');
       }
     }
   }
