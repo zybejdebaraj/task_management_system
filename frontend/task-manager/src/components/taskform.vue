@@ -28,13 +28,33 @@
         </select>
       </div>
 
-      <div class="field">
+      <div class="field" v-if="canEditStatus">
         <label>Status</label>
         <select v-model="status">
           <option value="todo">Todo</option>
           <option value="in-progress">In Progress</option>
           <option value="done">Done</option>
         </select>
+      </div>
+
+      <div class="field">
+        <label>Priority</label>
+        <select v-model="priority">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+
+      <div class="field" v-if="!editingTask">
+        <label>Attachments</label>
+        <input type="file" multiple @change="handleAttachments" />
+        <small>Optional. Add up to 5 files.</small>
+      </div>
+
+      <div class="field">
+        <label>Due Date</label>
+        <input v-model="dueDate" type="datetime-local" />
       </div>
 
       <div class="actions">
@@ -66,6 +86,9 @@ export default {
       users: [],
       projectMembers: [],
       status: 'todo',
+      priority: 'medium',
+      dueDate: '',
+      attachments: [],
       error: '',
       user: null
     };
@@ -80,6 +103,11 @@ export default {
       return this.users
         .filter((u) => u.role !== 'admin')
         .filter((u) => memberIdSet.has(Number(u.id)));
+    },
+    canEditStatus() {
+      if (!this.editingTask) return false; // Cannot set status on creation
+      if (!this.editingTask.user_id) return false;
+      return Number(this.editingTask.user_id) === Number(this.user?.id);
     }
   },
 
@@ -97,6 +125,8 @@ export default {
         this.status = newTask.status;
         this.projectId = newTask.project_id;
         this.assigneeId = newTask.user_id || '';
+        this.priority = newTask.priority || 'medium';
+        this.dueDate = newTask.due_date ? new Date(newTask.due_date).toISOString().slice(0, 16) : '';
         if (this.isAdminUser) this.refreshAssigneeData();
       }
     },
@@ -165,20 +195,26 @@ export default {
       try {
         this.error = '';
 
-        if (this.editingTask) {
-          const payload = { title: this.title, status: this.status };
+          if (this.editingTask) {
+          const payload = { title: this.title, priority: this.priority, due_date: this.dueDate || null };
+          if (this.canEditStatus) payload.status = this.status;
           if (this.projectId) payload.project_id = this.projectId;
           if (this.assigneeId) payload.user_id = this.assigneeId;
           await api.put(`/tasks/${this.editingTask.id}`, payload);
           toast.success('Task updated');
           this.$emit('taskUpdated');
         } else {
-          await api.post('/tasks', {
-            title: this.title,
-            status: this.status,
-            project_id: this.projectId,
-            user_id: this.assigneeId
+          const formData = new FormData();
+          formData.append('title', this.title);
+          formData.append('project_id', this.projectId);
+          formData.append('user_id', this.assigneeId);
+          formData.append('priority', this.priority);
+          if (this.dueDate) formData.append('due_date', this.dueDate);
+          this.attachments.forEach((file) => {
+            formData.append('attachments', file);
           });
+
+          await api.post('/tasks', formData);
           toast.success('Task created');
           this.$emit('taskCreated');
         }
@@ -196,9 +232,16 @@ export default {
       this.$emit('cancelEdit');
     },
 
+    handleAttachments(event) {
+      this.attachments = Array.from(event.target.files).slice(0, 5);
+    },
+
     resetForm() {
       this.title = '';
       this.status = 'todo';
+      this.priority = 'medium';
+      this.dueDate = '';
+      this.attachments = [];
       this.projectId = '';
       this.assigneeId = this.isAdminUser ? '' : (this.user?.id || '');
       this.users = [];

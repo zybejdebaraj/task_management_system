@@ -11,8 +11,28 @@
     </button>
 
     <div class="meta">
-      <p class="status" :class="task.status">{{ readableStatus(task.status) }}</p>
-      <strong>{{ task.title }}</strong>
+      <div class="meta-header">
+        <div>
+          <p class="status" :class="task.status">{{ readableStatus(task.status) }}</p>
+          <strong>{{ task.title }}</strong>
+        </div>
+        <p v-if="task.priority" class="priority" :class="task.priority">{{ task.priority }}</p>
+      </div>
+      <p v-if="task.due_date" class="due-date">{{ formatDueDate(task.due_date) }}</p>
+      <p v-if="task.attachments?.length" class="attachment-count">
+        {{ task.attachments.length }} attachment{{ task.attachments.length > 1 ? 's' : '' }}
+      </p>
+    </div>
+
+    <div class="comments-section">
+      <div v-for="comment in comments" :key="comment.id" class="comment">
+        <strong>{{ comment.username }}</strong>: {{ comment.content }}
+        <small>{{ formatDate(comment.created_at) }}</small>
+      </div>
+      <div class="add-comment">
+        <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
+        <button @click="addComment" :disabled="!newComment.trim()">Add</button>
+      </div>
     </div>
 
     <div class="actions">
@@ -44,6 +64,17 @@ export default {
   components: { Pencil },
   props: ['task', 'canManage', 'viewerUserId'],
 
+  data() {
+    return {
+      comments: [],
+      newComment: ''
+    };
+  },
+
+  mounted() {
+    this.loadComments();
+  },
+
   computed: {
     canMove() {
       if (this.canManage) return true;
@@ -68,6 +99,32 @@ export default {
       if (status === 'in-progress') return 'done';
       return 'done';
     },
+    formatDueDate(dueDate) {
+      const date = new Date(dueDate);
+      return `Due: ${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    },
+    formatDate(date) {
+      return new Date(date).toLocaleString();
+    },
+    async loadComments() {
+      try {
+        const response = await api.get(`/tasks/${this.task.id}/comments`);
+        this.comments = response.data;
+      } catch (err) {
+        console.error('Failed to load comments', err);
+      }
+    },
+    async addComment() {
+      if (!this.newComment.trim()) return;
+      try {
+        await api.post(`/tasks/${this.task.id}/comments`, { content: this.newComment });
+        this.newComment = '';
+        this.loadComments();
+        toast.success('Comment added');
+      } catch (err) {
+        toast.error('Failed to add comment');
+      }
+    },
     async deleteTask() {
       try {
         await api.delete(`/tasks/${this.task.id}`);
@@ -85,7 +142,7 @@ export default {
 .card {
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid #e2e8f0;
-  padding: 15px;
+  padding: 20px 15px 15px;
   border-radius: 12px;
   display: grid;
   gap: 12px;
@@ -98,6 +155,85 @@ export default {
   margin-top: 6px;
   color: #1e1b4b;
   font-size: 15px;
+}
+
+.meta-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.priority {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 20px;
+  text-transform: uppercase;
+}
+
+.low { color: #64748b; }
+.medium { color: #d97706; }
+.high { color: #dc2626; }
+
+.due-date {
+  font-size: 12px;
+  color: #7c3aed;
+  margin-top: 10px;
+}
+
+.attachment-count {
+  font-size: 12px;
+  color: #475569;
+  margin-top: 6px;
+}
+
+.comments-section {
+  margin-top: 10px;
+}
+
+.comment {
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.comment strong {
+  color: #1e1b4b;
+}
+
+.comment small {
+  color: #64748b;
+  display: block;
+  margin-top: 4px;
+}
+
+.add-comment {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.add-comment input {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.add-comment button {
+  padding: 6px 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.add-comment button:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
 }
 
 .actions {

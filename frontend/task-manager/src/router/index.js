@@ -24,12 +24,11 @@ const routes = [
   {
     path: '/',
     component: landing,
-    beforeEnter: (to, from, next) => {
+    beforeEnter: (to, from) => {
       if (isAuthenticated()) {
-        next('/dashboard');
-      } else {
-        next();
+        return '/dashboard';
       }
+      return true;
     }
   },
   { path: '/login', component: login },
@@ -38,73 +37,67 @@ const routes = [
   {
     path: '/dashboard',
     component: dashboard,
-    beforeEnter: (to, from, next) => {
+    beforeEnter: (to, from) => {
       if (!isAuthenticated()) {
-        next('/login');
-      } else {
-        next();
+        return '/login';
       }
+      return true;
     }
   },
 
   {
     path: '/tasks',
     component: TasksPage,
-    beforeEnter: (to, from, next) => {
+    beforeEnter: (to, from) => {
       if (!isAuthenticated()) {
-        next('/login');
-      } else {
-        next();
+        return '/login';
       }
+      return true;
     }
   },
 
   {
     path: '/projects',
     component: ProjectsPage,
-    beforeEnter: (to, from, next) => {
+    beforeEnter: (to, from) => {
       if (!isAuthenticated()) {
-        next('/login');
+        return '/login';
       } else if (!isAdminUser()) {
-        next('/dashboard');
-      } else {
-        next();
+        return '/dashboard';
       }
+      return true;
     }
   },
   {
     path: '/members',
     component: MembersPage,
-    beforeEnter: (to, from, next) => {
+    beforeEnter: (to, from) => {
       if (!isAuthenticated()) {
-        next('/login');
+        return '/login';
       } else if (!isAdminUser()) {
-        next('/dashboard');
-      } else {
-        next();
+        return '/dashboard';
       }
+      return true;
     }
   },
   {
     path: '/inbox-email',
     component: InboxEmailPage,
-    beforeEnter: (to, from, next) => {
+    beforeEnter: (to, from) => {
       if (!isAuthenticated()) {
-        next('/login');
-      } else {
-        next();
+        return '/login';
       }
+      return true;
     }
   },
   {
     path: '/settings',
     component: SettingsPage,
-    beforeEnter: (to, from, next) => {
+    beforeEnter: (to, from) => {
       if (!isAuthenticated()) {
-        next('/login');
-      } else {
-        next();
+        return '/login';
       }
+      return true;
     }
   }
 ];

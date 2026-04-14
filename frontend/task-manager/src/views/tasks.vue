@@ -104,6 +104,7 @@ import TaskForm from '../components/taskform.vue';
 import api from '../api/api';
 import { getUser } from '@/utils/auth';
 import BaseModal from '@/components/baseModal.vue';
+import { toast } from '@/utils/toast';
 
 export default {
   components: { TaskCard, TaskForm, BaseModal },
@@ -118,7 +119,8 @@ export default {
       error: '',
       refreshTimer: null,
       onFocus: null,
-      showTaskModal: false
+      showTaskModal: false,
+      notifications: []
     };
   },
   computed: {
@@ -167,8 +169,28 @@ export default {
       try {
         const res = await api.get('/tasks');
         this.tasks = res.data;
+        await this.getNotifications();
       } catch (err) {
         // avoid noisy errors during background refresh; keep last good list
+        console.error(err);
+      }
+    },
+
+    async getNotifications() {
+      try {
+        const res = await api.get('/notifications');
+        this.notifications = res.data;
+
+        const unread = this.notifications.filter((notification) => !notification.is_read);
+        if (unread.length) {
+          await Promise.all(
+            unread.map(async (notification) => {
+              toast.info(notification.message, { title: 'New Notification', timeoutMs: 7000 });
+              await api.put(`/notifications/${notification.id}/read`);
+            })
+          );
+        }
+      } catch (err) {
         console.error(err);
       }
     },
