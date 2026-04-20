@@ -35,44 +35,87 @@
       </div>
     </div>
 
+    <div v-if="task.is_big" class="subtasks-section">
+      <div class="subtasks-header">
+        <strong>Checklist</strong>
+        <small>{{ doneSubtaskCount }}/{{ subtasks.length }} done</small>
+      </div>
+      <div v-for="subtask in subtasks" :key="subtask.id" class="subtask-row">
+        <label>
+          <input type="checkbox" :checked="subtask.is_done" @change="toggleSubtask(subtask)" />
+          <span :class="{ done: subtask.is_done }">{{ subtask.title }}</span>
+        </label>
+        <button class="mini-danger" type="button" @click="deleteSubtask(subtask.id)">Delete</button>
+      </div>
+      <div class="add-subtask">
+        <input v-model="newSubtask" placeholder="Add subtask..." @keyup.enter="createSubtask" />
+        <button @click="createSubtask" :disabled="!newSubtask.trim()">Add</button>
+      </div>
+    </div>
+
     <div class="actions">
       <button
-        v-if="canMove && task.status === 'in-progress'"
-        class="ghost"
-        @click="$emit('move', { task, status: previousStatus(task.status) })"
+        class="ghost icon-action"
+        type="button"
+        @click="$emit('details', task)"
+        aria-label="Task details"
+        data-tip="Details"
       >
-        Move Left
+        <Info class="action-icon" aria-hidden="true" />
+      </button>
+      <button
+        v-if="canMove && task.status === 'in-progress'"
+        class="ghost icon-action"
+        @click="$emit('move', { task, status: previousStatus(task.status) })"
+        aria-label="Move task left"
+        data-tip="Move left"
+      >
+        <ArrowLeft class="action-icon" aria-hidden="true" />
       </button>
       <button
         v-if="canMove && task.status !== 'done'"
-        class="ghost"
+        class="ghost icon-action"
         @click="$emit('move', { task, status: nextStatus(task.status) })"
+        aria-label="Move task right"
+        data-tip="Move right"
       >
-        Move Right
+        <ArrowRight class="action-icon" aria-hidden="true" />
       </button>
-      <button v-if="canManage" @click="deleteTask">Delete</button>
+      <button
+        v-if="canManage"
+        class="icon-action danger"
+        type="button"
+        @click="deleteTask"
+        aria-label="Delete task"
+        data-tip="Delete"
+      >
+        <Trash2 class="action-icon" aria-hidden="true" />
+      </button>
     </div>
   </div>
 </template>
 
 <script>
 import api from '../api/api';
-import { Pencil } from 'lucide-vue-next';
+import { ArrowLeft, ArrowRight, Info, Pencil, Trash2 } from 'lucide-vue-next';
 import { toast } from '@/utils/toast';
 
 export default {
-  components: { Pencil },
+  components: { Pencil, ArrowLeft, ArrowRight, Trash2, Info },
   props: ['task', 'canManage', 'viewerUserId'],
 
   data() {
     return {
       comments: [],
-      newComment: ''
+      newComment: '',
+      subtasks: [],
+      newSubtask: ''
     };
   },
 
   mounted() {
     this.loadComments();
+    this.loadSubtasks();
   },
 
   computed: {
@@ -80,6 +123,19 @@ export default {
       if (this.canManage) return true;
       if (!this.viewerUserId) return false;
       return String(this.task.user_id) === String(this.viewerUserId);
+    },
+    doneSubtaskCount() {
+      return this.subtasks.filter((subtask) => subtask.is_done).length;
+    }
+  },
+  watch: {
+    'task.id'() {
+      this.loadComments();
+      this.loadSubtasks();
+    },
+    'task.is_big'(isBig) {
+      if (isBig) this.loadSubtasks();
+      else this.subtasks = [];
     }
   },
 
@@ -112,6 +168,46 @@ export default {
         this.comments = response.data;
       } catch (err) {
         console.error('Failed to load comments', err);
+      }
+    },
+    async loadSubtasks() {
+      if (!this.task.is_big) {
+        this.subtasks = [];
+        return;
+      }
+      try {
+        const response = await api.get(`/tasks/${this.task.id}/subtasks`);
+        this.subtasks = response.data;
+      } catch (err) {
+        console.error('Failed to load subtasks', err);
+      }
+    },
+    async createSubtask() {
+      if (!this.newSubtask.trim()) return;
+      try {
+        await api.post(`/tasks/${this.task.id}/subtasks`, { title: this.newSubtask });
+        this.newSubtask = '';
+        await this.loadSubtasks();
+        toast.success('Subtask added');
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to add subtask');
+      }
+    },
+    async toggleSubtask(subtask) {
+      try {
+        await api.put(`/subtasks/${subtask.id}`, { is_done: !subtask.is_done });
+        await this.loadSubtasks();
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to update subtask');
+      }
+    },
+    async deleteSubtask(subtaskId) {
+      try {
+        await api.delete(`/subtasks/${subtaskId}`);
+        await this.loadSubtasks();
+        toast.success('Subtask deleted');
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to delete subtask');
       }
     },
     async addComment() {
@@ -236,6 +332,54 @@ export default {
   cursor: not-allowed;
 }
 
+.subtasks-section {
+  margin-top: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.subtasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.subtask-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.subtask-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.done {
+  text-decoration: line-through;
+  color: #64748b;
+}
+
+.add-subtask {
+  display: flex;
+  gap: 8px;
+}
+
+.add-subtask input {
+  flex: 1;
+}
+
+.mini-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -285,5 +429,70 @@ export default {
 
 .ghost:hover {
   background: #cbd5e1;
+}
+
+.icon-action {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+}
+
+.action-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.danger:hover {
+  background: #fecaca;
+}
+
+.icon-action::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  background: #0f172a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 5;
+}
+
+.icon-action::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 3px);
+  transform: translateX(-50%) translateY(4px);
+  border: 5px solid transparent;
+  border-top-color: #0f172a;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.icon-action:hover::after,
+.icon-action:hover::before,
+.icon-action:focus-visible::after,
+.icon-action:focus-visible::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 </style>

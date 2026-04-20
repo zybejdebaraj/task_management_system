@@ -46,6 +46,16 @@
         </select>
       </div>
 
+      <div class="field">
+        <label>Description</label>
+        <textarea v-model="description" rows="3" placeholder="Add extra details for this task..."></textarea>
+      </div>
+
+      <div class="field toggle-field">
+        <input id="is-big-task" v-model="isBig" type="checkbox" />
+        <label class="toggle-text" for="is-big-task">Big task</label>
+      </div>
+
       <div class="field" v-if="!editingTask">
         <label>Attachments</label>
         <input type="file" multiple @change="handleAttachments" />
@@ -88,6 +98,8 @@ export default {
       status: 'todo',
       priority: 'medium',
       dueDate: '',
+      description: '',
+      isBig: false,
       attachments: [],
       error: '',
       user: null
@@ -126,6 +138,8 @@ export default {
         this.projectId = newTask.project_id;
         this.assigneeId = newTask.user_id || '';
         this.priority = newTask.priority || 'medium';
+        this.description = newTask.description || '';
+        this.isBig = !!newTask.is_big;
         this.dueDate = newTask.due_date ? new Date(newTask.due_date).toISOString().slice(0, 16) : '';
         if (this.isAdminUser) this.refreshAssigneeData();
       }
@@ -196,7 +210,13 @@ export default {
         this.error = '';
 
           if (this.editingTask) {
-          const payload = { title: this.title, priority: this.priority, due_date: this.dueDate || null };
+          const payload = {
+            title: this.title,
+            description: this.description || null,
+            priority: this.priority,
+            due_date: this.dueDate || null,
+            is_big: this.isBig
+          };
           if (this.canEditStatus) payload.status = this.status;
           if (this.projectId) payload.project_id = this.projectId;
           if (this.assigneeId) payload.user_id = this.assigneeId;
@@ -206,9 +226,11 @@ export default {
         } else {
           const formData = new FormData();
           formData.append('title', this.title);
+          formData.append('description', this.description || '');
           formData.append('project_id', this.projectId);
           formData.append('user_id', this.assigneeId);
           formData.append('priority', this.priority);
+          formData.append('is_big', this.isBig);
           if (this.dueDate) formData.append('due_date', this.dueDate);
           this.attachments.forEach((file) => {
             formData.append('attachments', file);
@@ -240,6 +262,8 @@ export default {
       this.title = '';
       this.status = 'todo';
       this.priority = 'medium';
+      this.description = '';
+      this.isBig = false;
       this.dueDate = '';
       this.attachments = [];
       this.projectId = '';
@@ -268,6 +292,44 @@ export default {
   margin-bottom: 6px;
   font-size: 13px;
   color: #475569;
+}
+
+.field textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  color: #0f172a;
+  background: #fff;
+  resize: vertical;
+  min-height: 88px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
+}
+
+.toggle-field {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.toggle-field input[type='checkbox'] {
+  width: auto;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.toggle-text {
+  margin: 0;
+  display: inline-block;
+  cursor: pointer;
 }
 
 .actions {

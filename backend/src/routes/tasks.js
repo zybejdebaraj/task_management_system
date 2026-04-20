@@ -9,12 +9,14 @@ const {
   createTask,
   deleteTask,
   updateTask,
+  getTaskActivity,
 } = require('../controllers/taskController');
 
 const upload = multer({ dest: path.join(__dirname, '../uploads') });
 
 router.get('/', auth, getTasks);
 router.post('/', auth, upload.array('attachments', 5), createTask);
+router.get('/:id/activity', auth, getTaskActivity);
 router.delete('/:id', auth, deleteTask);
 router.put('/:id', auth, updateTask);
 

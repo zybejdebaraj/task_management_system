@@ -23,6 +23,26 @@
             {{ project.name }}
           </option>
         </select>
+        <select v-model="selectedPriority">
+          <option value="">All priorities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <select v-model="selectedStatus">
+          <option value="">All statuses</option>
+          <option value="todo">Todo</option>
+          <option value="in-progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+        <label class="inline-check">
+          <input v-model="showOnlyOverdue" type="checkbox" />
+          <span>Overdue only</span>
+        </label>
+        <label class="inline-check">
+          <input v-model="showOnlyBig" type="checkbox" />
+          <span>Big tasks only</span>
+        </label>
       </div>
       <p v-if="error" class="error">{{ error }}</p>
 
@@ -41,6 +61,7 @@
             @deleted="getTasks"
             @edit="handleEdit"
             @move="handleMove"
+            @details="openDetails"
           />
         </section>
 
@@ -58,6 +79,7 @@
             @deleted="getTasks"
             @edit="handleEdit"
             @move="handleMove"
+            @details="openDetails"
           />
         </section>
 
@@ -75,6 +97,7 @@
             @deleted="getTasks"
             @edit="handleEdit"
             @move="handleMove"
+            @details="openDetails"
           />
         </section>
       </div>
@@ -94,6 +117,51 @@
         @taskUpdated="handleUpdated"
         @cancelEdit="cancelEdit"
       />
+    </BaseModal>
+
+    <BaseModal v-model="showDetailsModal" :title="selectedTask ? `Task Details: ${selectedTask.title}` : 'Task Details'">
+      <div v-if="selectedTask" class="details-grid">
+        <div class="detail-card">
+          <h4>Overview</h4>
+          <p><strong>Status:</strong> {{ selectedTask.status }}</p>
+          <p><strong>Priority:</strong> {{ selectedTask.priority || 'medium' }}</p>
+          <p><strong>Assignee:</strong> {{ selectedTask.assignee_username || selectedTask.assignee_email || 'Unassigned' }}</p>
+          <p><strong>Project:</strong> {{ selectedTask.project_name || 'N/A' }}</p>
+          <p><strong>Due:</strong> {{ selectedTask.due_date ? formatDate(selectedTask.due_date) : 'No due date' }}</p>
+          <p><strong>Big task:</strong> {{ selectedTask.is_big ? 'Yes' : 'No' }}</p>
+          <p><strong>Description:</strong> {{ selectedTask.description || 'No description' }}</p>
+          <div class="attachments">
+            <p><strong>Attachments:</strong></p>
+            <p v-if="!selectedTask.attachments?.length" class="helper">No attachments</p>
+            <ul v-else class="attachment-list">
+              <li v-for="att in selectedTask.attachments" :key="att.id || att.url">
+                <a :href="attachmentUrl(att.url)" target="_blank" rel="noopener noreferrer">
+                  {{ att.original_name || att.file_name || 'Attachment' }}
+                </a>
+                <img
+                  v-if="att.mime_type && att.mime_type.startsWith('image/')"
+                  :src="attachmentUrl(att.url)"
+                  :alt="att.original_name || 'task attachment'"
+                  class="attachment-preview"
+                />
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="detail-card">
+          <h4>Activity</h4>
+          <p v-if="loadingActivity" class="helper">Loading activity...</p>
+          <p v-else-if="!taskActivity.length" class="helper">No activity yet.</p>
+          <ul v-else class="activity-list">
+            <li v-for="item in taskActivity" :key="item.id">
+              <p>{{ item.detail || item.action }}</p>
+              <small>
+                {{ item.username || item.email || 'System' }} • {{ formatDate(item.created_at) }}
+              </small>
+            </li>
+          </ul>
+        </div>
+      </div>
     </BaseModal>
   </div>
 </template>
@@ -116,20 +184,43 @@ export default {
       user: null,
       search: '',
       selectedProject: '',
+      selectedPriority: '',
+      selectedStatus: '',
+      showOnlyOverdue: false,
+      showOnlyBig: false,
       error: '',
       refreshTimer: null,
       onFocus: null,
       showTaskModal: false,
-      notifications: []
+      notifications: [],
+      showDetailsModal: false,
+      selectedTask: null,
+      taskActivity: [],
+      loadingActivity: false,
+      pendingTaskIdFromRoute: null
     };
+  },
+  watch: {
+    '$route.query.taskId': {
+      immediate: true,
+      handler(value) {
+        this.pendingTaskIdFromRoute = value ? String(value) : null;
+        this.tryOpenTaskFromRoute();
+      }
+    }
   },
   computed: {
     filteredTasks() {
       const q = this.search.trim().toLowerCase();
+      const now = new Date();
       return this.tasks.filter((task) => {
         const matchesSearch = !q || task.title.toLowerCase().includes(q);
         const matchesProject = !this.selectedProject || task.project_name === this.selectedProject;
-        return matchesSearch && matchesProject;
+        const matchesPriority = !this.selectedPriority || task.priority === this.selectedPriority;
+        const matchesStatus = !this.selectedStatus || task.status === this.selectedStatus;
+        const matchesOverdue = !this.showOnlyOverdue || (task.due_date && task.status !== 'done' && new Date(task.due_date) < now);
+        const matchesBig = !this.showOnlyBig || !!task.is_big;
+        return matchesSearch && matchesProject && matchesPriority && matchesStatus && matchesOverdue && matchesBig;
       });
     },
     groupedTasks() {
@@ -170,6 +261,7 @@ export default {
         const res = await api.get('/tasks');
         this.tasks = res.data;
         await this.getNotifications();
+        this.tryOpenTaskFromRoute();
       } catch (err) {
         // avoid noisy errors during background refresh; keep last good list
         console.error(err);
@@ -219,6 +311,38 @@ export default {
     openAddTaskModal() {
       this.editingTask = null;
       this.showTaskModal = true;
+    },
+    async openDetails(task) {
+      this.selectedTask = task;
+      this.showDetailsModal = true;
+      await this.loadTaskActivity(task.id);
+    },
+    tryOpenTaskFromRoute() {
+      if (!this.pendingTaskIdFromRoute || !this.tasks.length) return;
+      const match = this.tasks.find((task) => String(task.id) === this.pendingTaskIdFromRoute);
+      if (!match) return;
+      this.pendingTaskIdFromRoute = null;
+      this.openDetails(match);
+    },
+    async loadTaskActivity(taskId) {
+      try {
+        this.loadingActivity = true;
+        const res = await api.get(`/tasks/${taskId}/activity`);
+        this.taskActivity = res.data || [];
+      } catch (err) {
+        console.error(err);
+        this.taskActivity = [];
+      } finally {
+        this.loadingActivity = false;
+      }
+    },
+    formatDate(value) {
+      return new Date(value).toLocaleString();
+    },
+    attachmentUrl(path) {
+      if (!path) return '#';
+      if (path.startsWith('http://') || path.startsWith('https://')) return path;
+      return `http://localhost:5000${path}`;
     }
   }
 };
@@ -250,8 +374,28 @@ export default {
 
 .toolbar {
   display: grid;
-  grid-template-columns: 1fr 260px;
+  grid-template-columns: 1fr 220px 180px 180px auto auto;
   gap: 10px;
+}
+
+.inline-check {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.inline-check input[type='checkbox'] {
+  width: auto;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.inline-check span {
+  font-size: 13px;
+  display: inline-block;
 }
 
 .helper {
@@ -301,6 +445,75 @@ export default {
   font-weight: 700;
 }
 
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.detail-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.detail-card h4 {
+  margin-bottom: 10px;
+}
+
+.detail-card p {
+  margin-bottom: 8px;
+}
+
+.attachments {
+  margin-top: 8px;
+}
+
+.attachment-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.attachment-list a {
+  color: #4338ca;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.attachment-list a:hover {
+  text-decoration: underline;
+}
+
+.attachment-preview {
+  margin-top: 6px;
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.activity-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.activity-list small {
+  color: #64748b;
+}
+
 @media (max-width: 980px) {
   .header-row {
     flex-direction: column;
@@ -311,6 +524,9 @@ export default {
   }
 
   .board {
+    grid-template-columns: 1fr;
+  }
+  .details-grid {
     grid-template-columns: 1fr;
   }
 }

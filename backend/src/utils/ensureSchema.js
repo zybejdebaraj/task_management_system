@@ -46,13 +46,26 @@ const ensureSchema = async () => {
     CREATE TABLE IF NOT EXISTS tasks (
       id SERIAL PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
+      description TEXT,
       status VARCHAR(20) NOT NULL DEFAULT 'todo',
       user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
       created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
       completed_at TIMESTAMP,
       due_date TIMESTAMP,
+      is_big BOOLEAN NOT NULL DEFAULT FALSE,
       priority VARCHAR(20) DEFAULT 'medium',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS subtasks (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      title VARCHAR(255) NOT NULL,
+      is_done BOOLEAN NOT NULL DEFAULT FALSE,
+      position INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -81,6 +94,28 @@ const ensureSchema = async () => {
     );
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS task_activity (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      action VARCHAR(80) NOT NULL,
+      detail TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reminder_log (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      reminder_type VARCHAR(32) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (task_id, user_id, reminder_type)
+    );
+  `);
+
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'member';`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(120);`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE;`);
@@ -98,7 +133,9 @@ const ensureSchema = async () => {
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE SET NULL;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;`);
+  await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description TEXT;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;`);
+  await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS is_big BOOLEAN NOT NULL DEFAULT FALSE;`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS comments (
       id SERIAL PRIMARY KEY,

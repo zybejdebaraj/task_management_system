@@ -35,13 +35,19 @@
     </div>
 
     <div class="role-footer">
-     <strong>{{ isAdminUser ? 'Admin' : 'Member' }}</strong>
+      <div class="profile">
+        <div class="avatar">{{ userInitials }}</div>
+        <div class="profile-text">
+          <strong>{{ displayName }}</strong>
+          <small>{{ isAdminUser ? 'Admin' : 'Member' }}</small>
+        </div>
+      </div>
     </div>
   </aside>
 </template>
 
 <script>
-import { isAdmin } from '@/utils/auth';
+import { getUser, isAdmin } from '@/utils/auth';
 import {
   LayoutDashboard,
   ListTodo,
@@ -62,11 +68,24 @@ export default {
   },
   data() {
     return {
-      isAdminUser: false
+      isAdminUser: false,
+      user: null
     };
+  },
+  computed: {
+    displayName() {
+      return this.user?.username || this.user?.email || 'User';
+    },
+    userInitials() {
+      const source = (this.user?.username || this.user?.email || '').trim();
+      if (!source) return 'U';
+      const clean = source.split('@')[0].replace(/[_\-.]+/g, ' ').trim();
+      return clean.charAt(0).toUpperCase() || 'U';
+    }
   },
   mounted() {
     this.isAdminUser = isAdmin();
+    this.user = getUser();
   }
 };
 </script>
@@ -146,6 +165,44 @@ export default {
   background: rgba(99, 102, 241, 0.18);
   color: #dbeafe;
   font-size: 13px;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  flex: 0 0 auto;
+}
+
+.profile-text {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.profile-text strong,
+.profile-text small {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-text small {
+  color: #cbd5e1;
 }
 
 @media (max-width: 900px) {

@@ -12,24 +12,6 @@
             <label>Email</label>
             <input v-model="profile.email" type="email" placeholder="you@email.com" />
           </div>
-          <div>
-            <label>Timezone</label>
-            <select v-model="profile.timezone">
-              <option value="UTC">UTC</option>
-              <option value="Africa/Nairobi">Africa/Nairobi</option>
-              <option value="Europe/London">Europe/London</option>
-              <option value="America/New_York">America/New_York</option>
-              <option value="Asia/Dubai">Asia/Dubai</option>
-            </select>
-          </div>
-          <div>
-            <label>Language</label>
-            <select v-model="profile.language">
-              <option value="en">English</option>
-              <option value="fr">French</option>
-              <option value="es">Spanish</option>
-            </select>
-          </div>
         </div>
         <button @click="saveProfile">Save Profile</button>
       </section>
@@ -76,9 +58,7 @@ export default {
     return {
       profile: {
         username: '',
-        email: '',
-        timezone: 'UTC',
-        language: 'en'
+        email: ''
       },
       password: {
         currentPassword: '',
@@ -101,8 +81,6 @@ export default {
         const res = await api.get('/auth/me');
         this.profile.username = res.data.username || '';
         this.profile.email = res.data.email || '';
-        this.profile.timezone = res.data.timezone || 'UTC';
-        this.profile.language = res.data.language || 'en';
         this.preferences.notifications_enabled = !!res.data.notifications_enabled;
         this.preferences.dark_mode = !!res.data.dark_mode;
         this.applyTheme(this.preferences.dark_mode);
