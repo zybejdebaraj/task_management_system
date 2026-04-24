@@ -1,23 +1,49 @@
 <template>
-  <div class="auth-container">
-    <div class="auth-box">
-      <h2>Login</h2>
-      <p class="subtitle">Welcome back! Enter your credentials to continue.</p>
-
-      <div class="form-group">
-        <label>Email</label>
-        <input v-model="email" placeholder="Email" />
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input v-model="password" type="password" placeholder="Password" />
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 px-4">
+    <div class="w-full max-w-md">
+      <!-- Logo -->
+      <div class="flex items-center justify-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 grid place-items-center font-bold text-white text-sm">TM</div>
+        <span class="text-xl font-bold text-white">Task Manager</span>
       </div>
 
-      <button class="submit-btn" @click="login">Login</button>
+      <!-- Card -->
+      <div class="bg-white rounded-2xl shadow-2xl p-8">
+        <h2 class="text-2xl font-bold text-slate-900 mb-1">Welcome back</h2>
+        <p class="text-sm text-slate-500 mb-6">Sign in to continue to your workspace.</p>
 
-      <p class="link" @click="$router.push('/register')">
-        Go to Register
-      </p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Email</label>
+            <input
+              v-model="email"
+              type="email"
+              placeholder="you@company.com"
+              class="block w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Password</label>
+            <input
+              v-model="password"
+              type="password"
+              placeholder="••••••••"
+              class="block w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+              @keyup.enter="login"
+            />
+          </div>
+        </div>
+
+        <button
+          class="mt-6 w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition"
+          @click="login"
+        >Sign in</button>
+
+        <p class="mt-5 text-center text-sm text-slate-500">
+          Don't have an account?
+          <span class="font-semibold text-indigo-600 cursor-pointer hover:underline" @click="$router.push('/register')">Create one</span>
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -28,32 +54,17 @@ import { toast } from '@/utils/toast';
 
 export default {
   data() {
-    return {
-      email: '',
-      password: '',
-      error: ''
-    };
+    return { email: '', password: '', error: '' };
   },
-
   methods: {
     async login() {
-      if (!this.email || !this.password) {
-        toast.error('Email and password are required');
-        return;
-      }
-
+      if (!this.email || !this.password) { toast.error('Email and password are required'); return; }
       this.error = '';
-
       try {
-        const res = await api.post('/auth/login', {
-          email: this.email,
-          password: this.password
-        });
-
+        const res = await api.post('/auth/login', { email: this.email, password: this.password });
         localStorage.setItem('token', res.data.token);
         toast.success('Logged in');
         this.$router.push('/dashboard');
-
       } catch (err) {
         toast.error(err.response?.data?.message || 'Login failed');
       }
@@ -61,61 +72,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.auth-container {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-}
-
-.auth-box {
-  background: white;
-  padding: 28px;
-  width: 360px;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
-}
-
-.auth-box h2 {
-  margin-bottom: 6px;
-}
-
-.subtitle {
-  color: #64748b;
-  margin-bottom: 18px;
-}
-
-.form-group {
-  margin-bottom: 14px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  color: #475569;
-}
-
-.submit-btn {
-  width: 100%;
-  margin-top: 4px;
-}
-
-.link {
-  margin-top: 16px;
-  color: #4338ca;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-}
-
-.error {
-  color: #dc2626;
-  margin-top: 4px;
-  margin-bottom: 12px;
-}
-</style>

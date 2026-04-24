@@ -302,6 +302,26 @@ exports.updateTask = async (req, res) => {
   }
 };
 
+exports.getAllActivity = async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Admins only' });
+  }
+  try {
+    const result = await pool.query(
+      `SELECT ta.id, ta.task_id, t.title AS task_title, ta.action, ta.detail,
+              ta.created_at, u.username, u.email
+       FROM task_activity ta
+       LEFT JOIN tasks t ON t.id = ta.task_id
+       LEFT JOIN users u ON u.id = ta.actor_user_id
+       ORDER BY ta.created_at DESC, ta.id DESC
+       LIMIT 500`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.getTaskActivity = async (req, res) => {
   const { id } = req.params;
   try {

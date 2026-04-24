@@ -1,97 +1,90 @@
 <template>
-  <div class="card">
+  <div
+    class="bg-white rounded-xl border p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all relative"
+    :class="isOverdue ? 'border-red-300 bg-red-50/30' : 'border-slate-200'"
+  >
+
+    <!-- Edit button -->
     <button
-      v-if="canManage && task.status !== 'done'"
-      class="icon-btn edit-icon"
+      v-if="canManage"
+      class="absolute top-3 right-3 w-7 h-7 rounded-lg bg-transparent border-none text-slate-400 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center transition cursor-pointer"
       type="button"
       @click="$emit('edit', task)"
       aria-label="Edit task"
     >
-      <Pencil class="pencil" aria-hidden="true" />
+      <Pencil class="w-3.5 h-3.5" />
     </button>
 
-    <div class="meta">
-      <div class="meta-header">
+    <!-- Meta -->
+    <div class="space-y-1.5 mb-3">
+      <div class="flex items-start justify-between gap-2 pr-6">
         <div>
-          <p class="status" :class="task.status">{{ readableStatus(task.status) }}</p>
-          <strong>{{ task.title }}</strong>
+          <span :class="statusClass(task.status)" class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">{{ readableStatus(task.status) }}</span>
+          <p class="font-semibold text-slate-800 text-sm mt-1.5 leading-snug">{{ task.title }}</p>
         </div>
-        <p v-if="task.priority" class="priority" :class="task.priority">{{ task.priority }}</p>
+        <span v-if="task.priority" :class="priorityClass(task.priority)" class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 mt-4">{{ task.priority }}</span>
       </div>
-      <p v-if="task.due_date" class="due-date">{{ formatDueDate(task.due_date) }}</p>
-      <p v-if="task.attachments?.length" class="attachment-count">
-        {{ task.attachments.length }} attachment{{ task.attachments.length > 1 ? 's' : '' }}
-      </p>
+      <div v-if="task.due_date" class="flex items-center gap-2 flex-wrap">
+        <p class="text-xs font-medium" :class="isOverdue ? 'text-red-600' : 'text-violet-600'">{{ formatDueDate(task.due_date) }}</p>
+        <span v-if="isOverdue" class="text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Overdue</span>
+      </div>
+      <p v-if="task.attachments?.length" class="text-xs text-slate-400">{{ task.attachments.length }} attachment{{ task.attachments.length > 1 ? 's' : '' }}</p>
     </div>
 
-    <div class="comments-section">
-      <div v-for="comment in comments" :key="comment.id" class="comment">
-        <strong>{{ comment.username }}</strong>: {{ comment.content }}
-        <small>{{ formatDate(comment.created_at) }}</small>
+    <!-- Subtasks -->
+    <div v-if="task.is_big" class="bg-slate-50 rounded-xl border border-slate-100 p-3 mb-3 space-y-2">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs font-bold text-slate-600">Checklist</span>
+        <span class="text-xs text-slate-400">{{ doneSubtaskCount }}/{{ subtasks.length }}</span>
       </div>
-      <div class="add-comment">
-        <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
-        <button @click="addComment" :disabled="!newComment.trim()">Add</button>
-      </div>
-    </div>
-
-    <div v-if="task.is_big" class="subtasks-section">
-      <div class="subtasks-header">
-        <strong>Checklist</strong>
-        <small>{{ doneSubtaskCount }}/{{ subtasks.length }} done</small>
-      </div>
-      <div v-for="subtask in subtasks" :key="subtask.id" class="subtask-row">
-        <label>
-          <input type="checkbox" :checked="subtask.is_done" @change="toggleSubtask(subtask)" />
-          <span :class="{ done: subtask.is_done }">{{ subtask.title }}</span>
+      <div v-for="subtask in subtasks" :key="subtask.id" class="flex items-center justify-between gap-2">
+        <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+          <input type="checkbox" :checked="subtask.is_done" @change="toggleSubtask(subtask)" class="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+          <span :class="subtask.is_done ? 'line-through text-slate-400' : 'text-slate-700'" class="text-xs truncate">{{ subtask.title }}</span>
         </label>
-        <button class="mini-danger" type="button" @click="deleteSubtask(subtask.id)">Delete</button>
+        <button class="text-[10px] font-semibold text-red-400 hover:text-red-600 bg-transparent border-none cursor-pointer p-0 shrink-0" @click="deleteSubtask(subtask.id)">Delete</button>
       </div>
-      <div class="add-subtask">
-        <input v-model="newSubtask" placeholder="Add subtask..." @keyup.enter="createSubtask" />
-        <button @click="createSubtask" :disabled="!newSubtask.trim()">Add</button>
+      <div class="flex items-center gap-2 pt-1">
+        <input v-model="newSubtask" placeholder="Add subtask..." @keyup.enter="createSubtask" class="flex-1 text-xs rounded-lg border-slate-200 focus:border-indigo-400 focus:ring-indigo-400 py-1.5 px-2" />
+        <button class="text-xs px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold border-none cursor-pointer transition shrink-0" @click="createSubtask" :disabled="!newSubtask.trim()">Add</button>
       </div>
     </div>
 
-    <div class="actions">
-      <button
-        class="ghost icon-action"
-        type="button"
-        @click="$emit('details', task)"
-        aria-label="Task details"
-        data-tip="Details"
-      >
-        <Info class="action-icon" aria-hidden="true" />
+    <!-- Comments -->
+    <div class="space-y-2 mb-3">
+      <div v-for="comment in comments" :key="comment.id" class="bg-slate-50 rounded-lg p-2.5 text-xs">
+        <span class="font-semibold text-slate-800">{{ comment.username }}</span>
+        <span class="text-slate-600">: {{ comment.content }}</span>
+        <p class="text-slate-400 text-[10px] mt-0.5">{{ formatDate(comment.created_at) }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" class="flex-1 text-xs rounded-lg border-slate-200 focus:border-indigo-400 focus:ring-indigo-400 py-1.5 px-2" />
+        <button class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border-none cursor-pointer transition shrink-0" @click="addComment" :disabled="!newComment.trim()">Add</button>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-1.5 pt-2 border-t border-slate-100">
+      <button class="action-btn" @click="$emit('details', task)" aria-label="Details" data-tip="Details">
+        <Info class="w-3.5 h-3.5" />
       </button>
-      <button
-        v-if="canMove && task.status === 'in-progress'"
-        class="ghost icon-action"
-        @click="$emit('move', { task, status: previousStatus(task.status) })"
-        aria-label="Move task left"
-        data-tip="Move left"
-      >
-        <ArrowLeft class="action-icon" aria-hidden="true" />
+      <button v-if="canMove && task.status === 'in-progress'" class="action-btn" @click="$emit('move', { task, status: 'todo' })" aria-label="Move left" data-tip="Move left">
+        <ArrowLeft class="w-3.5 h-3.5" />
       </button>
-      <button
-        v-if="canMove && task.status !== 'done'"
-        class="ghost icon-action"
-        @click="$emit('move', { task, status: nextStatus(task.status) })"
-        aria-label="Move task right"
-        data-tip="Move right"
-      >
-        <ArrowRight class="action-icon" aria-hidden="true" />
+      <button v-if="canMove && task.status !== 'done'" class="action-btn" @click="$emit('move', { task, status: nextStatus(task.status) })" aria-label="Move right" data-tip="Move right">
+        <ArrowRight class="w-3.5 h-3.5" />
       </button>
-      <button
-        v-if="canManage"
-        class="icon-action danger"
-        type="button"
-        @click="deleteTask"
-        aria-label="Delete task"
-        data-tip="Delete"
-      >
-        <Trash2 class="action-icon" aria-hidden="true" />
+      <button v-if="canManage" class="action-btn danger ml-auto" @click="showConfirm = true" aria-label="Delete" data-tip="Delete">
+        <Trash2 class="w-3.5 h-3.5" />
       </button>
     </div>
+
+    <ConfirmModal
+      v-model="showConfirm"
+      title="Delete task?"
+      :message="`'${task.title}' will be permanently deleted.`"
+      @confirm="deleteTask"
+    />
   </div>
 </template>
 
@@ -99,400 +92,115 @@
 import api from '../api/api';
 import { ArrowLeft, ArrowRight, Info, Pencil, Trash2 } from 'lucide-vue-next';
 import { toast } from '@/utils/toast';
+import ConfirmModal from '@/components/confirmModal.vue';
 
 export default {
-  components: { Pencil, ArrowLeft, ArrowRight, Trash2, Info },
+  components: { Pencil, ArrowLeft, ArrowRight, Trash2, Info, ConfirmModal },
   props: ['task', 'canManage', 'viewerUserId'],
-
   data() {
-    return {
-      comments: [],
-      newComment: '',
-      subtasks: [],
-      newSubtask: ''
-    };
+    return { comments: [], newComment: '', subtasks: [], newSubtask: '', showConfirm: false };
   },
-
-  mounted() {
-    this.loadComments();
-    this.loadSubtasks();
-  },
-
+  mounted() { this.loadComments(); this.loadSubtasks(); },
   computed: {
     canMove() {
       if (this.canManage) return true;
       if (!this.viewerUserId) return false;
       return String(this.task.user_id) === String(this.viewerUserId);
     },
-    doneSubtaskCount() {
-      return this.subtasks.filter((subtask) => subtask.is_done).length;
+    doneSubtaskCount() { return this.subtasks.filter(s => s.is_done).length; },
+    isOverdue() {
+      if (!this.task.due_date || this.task.status === 'done') return false;
+      return new Date(this.task.due_date) < new Date();
     }
   },
   watch: {
-    'task.id'() {
-      this.loadComments();
-      this.loadSubtasks();
-    },
-    'task.is_big'(isBig) {
-      if (isBig) this.loadSubtasks();
-      else this.subtasks = [];
-    }
+    'task.id'() { this.loadComments(); this.loadSubtasks(); },
+    'task.is_big'(isBig) { if (isBig) this.loadSubtasks(); else this.subtasks = []; }
   },
-
   methods: {
-    readableStatus(status) {
-      if (status === 'in-progress') return 'In Progress';
-      if (status === 'done') return 'Done';
-      return 'Todo';
+    statusClass(s) {
+      if (s === 'done') return 'bg-green-100 text-green-700';
+      if (s === 'in-progress') return 'bg-amber-100 text-amber-700';
+      return 'bg-slate-100 text-slate-500';
     },
-    previousStatus(status) {
-      if (status === 'done') return 'in-progress';
-      if (status === 'in-progress') return 'todo';
-      return 'todo';
+    priorityClass(p) {
+      if (p === 'high') return 'bg-red-100 text-red-700';
+      if (p === 'medium') return 'bg-amber-100 text-amber-700';
+      return 'bg-slate-100 text-slate-500';
     },
-    nextStatus(status) {
-      if (status === 'todo') return 'in-progress';
-      if (status === 'in-progress') return 'done';
-      return 'done';
-    },
-    formatDueDate(dueDate) {
-      const date = new Date(dueDate);
-      return `Due: ${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    },
-    formatDate(date) {
-      return new Date(date).toLocaleString();
-    },
+    readableStatus(s) { if (s === 'in-progress') return 'In Progress'; if (s === 'done') return 'Done'; return 'Todo'; },
+    nextStatus(s) { if (s === 'todo') return 'in-progress'; return 'done'; },
+    formatDueDate(d) { const date = new Date(d); return `Due: ${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`; },
+    formatDate(d) { return new Date(d).toLocaleString(); },
     async loadComments() {
-      try {
-        const response = await api.get(`/tasks/${this.task.id}/comments`);
-        this.comments = response.data;
-      } catch (err) {
-        console.error('Failed to load comments', err);
-      }
+      try { const r = await api.get(`/tasks/${this.task.id}/comments`); this.comments = r.data; }
+      catch (err) { console.error(err); }
     },
     async loadSubtasks() {
-      if (!this.task.is_big) {
-        this.subtasks = [];
-        return;
-      }
-      try {
-        const response = await api.get(`/tasks/${this.task.id}/subtasks`);
-        this.subtasks = response.data;
-      } catch (err) {
-        console.error('Failed to load subtasks', err);
-      }
+      if (!this.task.is_big) { this.subtasks = []; return; }
+      try { const r = await api.get(`/tasks/${this.task.id}/subtasks`); this.subtasks = r.data; }
+      catch (err) { console.error(err); }
     },
     async createSubtask() {
       if (!this.newSubtask.trim()) return;
-      try {
-        await api.post(`/tasks/${this.task.id}/subtasks`, { title: this.newSubtask });
-        this.newSubtask = '';
-        await this.loadSubtasks();
-        toast.success('Subtask added');
-      } catch (err) {
-        toast.error(err.response?.data?.message || 'Failed to add subtask');
-      }
+      try { await api.post(`/tasks/${this.task.id}/subtasks`, { title: this.newSubtask }); this.newSubtask = ''; await this.loadSubtasks(); toast.success('Subtask added'); }
+      catch (err) { toast.error(err.response?.data?.message || 'Failed to add subtask'); }
     },
     async toggleSubtask(subtask) {
-      try {
-        await api.put(`/subtasks/${subtask.id}`, { is_done: !subtask.is_done });
-        await this.loadSubtasks();
-      } catch (err) {
-        toast.error(err.response?.data?.message || 'Failed to update subtask');
-      }
+      try { await api.put(`/subtasks/${subtask.id}`, { is_done: !subtask.is_done }); await this.loadSubtasks(); }
+      catch (err) { toast.error(err.response?.data?.message || 'Failed to update subtask'); }
     },
     async deleteSubtask(subtaskId) {
-      try {
-        await api.delete(`/subtasks/${subtaskId}`);
-        await this.loadSubtasks();
-        toast.success('Subtask deleted');
-      } catch (err) {
-        toast.error(err.response?.data?.message || 'Failed to delete subtask');
-      }
+      try { await api.delete(`/subtasks/${subtaskId}`); await this.loadSubtasks(); toast.success('Subtask deleted'); }
+      catch (err) { toast.error(err.response?.data?.message || 'Failed to delete subtask'); }
     },
     async addComment() {
       if (!this.newComment.trim()) return;
-      try {
-        await api.post(`/tasks/${this.task.id}/comments`, { content: this.newComment });
-        this.newComment = '';
-        this.loadComments();
-        toast.success('Comment added');
-      } catch (err) {
-        toast.error('Failed to add comment');
-      }
+      try { await api.post(`/tasks/${this.task.id}/comments`, { content: this.newComment }); this.newComment = ''; this.loadComments(); toast.success('Comment added'); }
+      catch (err) { toast.error('Failed to add comment'); }
     },
     async deleteTask() {
-      try {
-        await api.delete(`/tasks/${this.task.id}`);
-        this.$emit('deleted');
-        toast.success('Task deleted');
-      } catch (err) {
-        toast.error(err.response?.data?.message || 'Failed to delete task');
-      }
+      try { await api.delete(`/tasks/${this.task.id}`); this.$emit('deleted'); toast.success('Task deleted'); }
+      catch (err) { toast.error(err.response?.data?.message || 'Failed to delete task'); }
     }
   }
 };
 </script>
 
 <style scoped>
-.card {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid #e2e8f0;
-  padding: 20px 15px 15px;
-  border-radius: 12px;
-  display: grid;
-  gap: 12px;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
-  position: relative;
-}
-
-.meta strong {
-  display: block;
-  margin-top: 6px;
-  color: #1e1b4b;
-  font-size: 15px;
-}
-
-.meta-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.priority {
-  font-size: 12px;
-  font-weight: 600;
-  margin-top: 20px;
-  text-transform: uppercase;
-}
-
-.low { color: #64748b; }
-.medium { color: #d97706; }
-.high { color: #dc2626; }
-
-.due-date {
-  font-size: 12px;
-  color: #7c3aed;
-  margin-top: 10px;
-}
-
-.attachment-count {
-  font-size: 12px;
-  color: #475569;
-  margin-top: 6px;
-}
-
-.comments-section {
-  margin-top: 10px;
-}
-
-.comment {
-  background: #f8fafc;
-  padding: 8px;
-  border-radius: 6px;
-  margin-bottom: 6px;
-  font-size: 13px;
-}
-
-.comment strong {
-  color: #1e1b4b;
-}
-
-.comment small {
-  color: #64748b;
-  display: block;
-  margin-top: 4px;
-}
-
-.add-comment {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.add-comment input {
-  flex: 1;
-  padding: 6px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-}
-
-.add-comment button {
-  padding: 6px 12px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.add-comment button:disabled {
-  background: #cbd5e1;
-  cursor: not-allowed;
-}
-
-.subtasks-section {
-  margin-top: 8px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 10px;
-}
-
-.subtasks-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.subtask-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.subtask-row label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.done {
-  text-decoration: line-through;
-  color: #64748b;
-}
-
-.add-subtask {
-  display: flex;
-  gap: 8px;
-}
-
-.add-subtask input {
-  flex: 1;
-}
-
-.mini-danger {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.icon-btn {
-  border: none;
-  background: transparent;
-  padding: 6px;
-  border-radius: 10px;
-  cursor: pointer;
-  color: #475569;
-  transition: 0.2s ease;
-}
-
-.icon-btn:hover {
-  background: #eef2f7;
-  color: #0f172a;
-}
-
-.edit-icon {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-.pencil {
-  width: 18px;
-  height: 18px;
-  display: block;
-}
-
-.status {
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.todo { color: #64748b; }
-.in-progress { color: #d97706; }
-.done { color: #16a34a; }
-
-.ghost {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-.ghost:hover {
-  background: #cbd5e1;
-}
-
-.icon-action {
-  width: 34px;
-  height: 34px;
+.action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
   position: relative;
 }
-
-.action-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.danger {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.danger:hover {
-  background: #fecaca;
-}
-
-.icon-action::after {
+.action-btn:hover { background: #e2e8f0; color: #0f172a; }
+.action-btn.danger { background: #fee2e2; color: #b91c1c; }
+.action-btn.danger:hover { background: #fecaca; }
+.action-btn::after {
   content: attr(data-tip);
   position: absolute;
+  bottom: calc(100% + 6px);
   left: 50%;
-  bottom: calc(100% + 8px);
-  transform: translateX(-50%) translateY(4px);
+  transform: translateX(-50%);
   background: #0f172a;
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 3px 7px;
+  border-radius: 5px;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  z-index: 5;
+  transition: opacity 0.15s;
 }
-
-.icon-action::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 3px);
-  transform: translateX(-50%) translateY(4px);
-  border: 5px solid transparent;
-  border-top-color: #0f172a;
-  opacity: 0;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.icon-action:hover::after,
-.icon-action:hover::before,
-.icon-action:focus-visible::after,
-.icon-action:focus-visible::before {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
+.action-btn:hover::after { opacity: 1; }
 </style>

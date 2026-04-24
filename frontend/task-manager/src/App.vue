@@ -1,10 +1,12 @@
 <template>
   <div>
-    <div v-if="showNavbar" class="app-shell">
+    <div v-if="showNavbar" class="flex min-h-screen">
       <Navbar />
-      <main class="content">
+      <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
         <Topbar />
-        <router-view />
+        <div class="flex-1">
+          <router-view />
+        </div>
       </main>
     </div>
     <router-view v-else />
@@ -19,7 +21,6 @@ import ToastHost from './components/toastHost.vue';
 
 export default {
   components: { Navbar, Topbar, ToastHost },
-
   computed: {
     showNavbar() {
       const hiddenRoutes = ['/', '/login', '/register'];
@@ -28,22 +29,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.app-shell {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 250px 1fr;
-}
-
-.content {
-  min-width: 0;
-  background: #f8fafc;
-}
-
-@media (max-width: 900px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

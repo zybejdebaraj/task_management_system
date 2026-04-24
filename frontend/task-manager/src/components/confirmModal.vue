@@ -1,0 +1,55 @@
+<template>
+  <div
+    v-if="modelValue"
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    @click.self="$emit('update:modelValue', false)"
+  >
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm overflow-hidden">
+
+      <!-- Header -->
+      <div class="flex items-center gap-3 px-6 pt-6 pb-4">
+        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+          <Trash2 class="w-5 h-5 text-red-600" />
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-900 text-base">{{ title }}</h3>
+          <p class="text-sm text-slate-500 mt-0.5">{{ message }}</p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-100">
+        <button
+          class="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-sm transition cursor-pointer"
+          type="button"
+          @click="$emit('update:modelValue', false)"
+        >Cancel</button>
+        <button
+          class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition cursor-pointer border-none"
+          type="button"
+          @click="confirm"
+        >Delete</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Trash2 } from 'lucide-vue-next';
+
+export default {
+  components: { Trash2 },
+  props: {
+    modelValue: { type: Boolean, default: false },
+    title: { type: String, default: 'Delete this item?' },
+    message: { type: String, default: 'This action cannot be undone.' },
+  },
+  emits: ['update:modelValue', 'confirm'],
+  methods: {
+    confirm() {
+      this.$emit('confirm');
+      this.$emit('update:modelValue', false);
+    }
+  }
+};
+</script>

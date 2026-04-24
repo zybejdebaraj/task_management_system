@@ -1,37 +1,57 @@
 <template>
-  <header class="topbar">
-    <h2>{{ pageTitle }}</h2>
-    <div class="actions">
-      <div class="notify-wrap" ref="notifyWrap">
-        <button class="icon-btn" type="button" @click="toggleNotifications" aria-label="Notifications">
-          <Bell class="icon" />
-          <span v-if="unreadCount" class="badge">{{ unreadCount }}</span>
+  <header class="sticky top-0 z-10 flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm">
+    <h2 class="text-lg font-bold text-slate-800">{{ pageTitle }}</h2>
+
+    <div class="flex items-center gap-3">
+      <!-- Notification bell -->
+      <div class="relative" ref="notifyWrap">
+        <button
+          type="button"
+          class="relative w-9 h-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 transition"
+          @click="toggleNotifications"
+          aria-label="Notifications"
+        >
+          <Bell class="w-4 h-4" />
+          <span
+            v-if="unreadCount"
+            class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold grid place-items-center px-1"
+          >{{ unreadCount }}</span>
         </button>
-        <div v-if="showNotifications" class="notify-panel">
-          <div class="notify-head">
-            <strong>Notifications</strong>
-            <div class="notify-tools">
-              <button class="link-btn" type="button" @click="loadNotifications">Refresh</button>
-              <button class="link-btn" type="button" @click="markAllAsRead">Mark all read</button>
+
+        <!-- Dropdown panel -->
+        <div
+          v-if="showNotifications"
+          class="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 overflow-hidden"
+        >
+          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <span class="font-bold text-sm text-slate-800">Notifications</span>
+            <div class="flex gap-3">
+              <button class="text-xs font-semibold text-indigo-600 hover:underline bg-transparent border-none cursor-pointer" @click="loadNotifications">Refresh</button>
+              <button class="text-xs font-semibold text-indigo-600 hover:underline bg-transparent border-none cursor-pointer" @click="markAllAsRead">Mark all read</button>
             </div>
           </div>
-          <p v-if="loading" class="empty">Loading...</p>
-          <p v-else-if="!notifications.length" class="empty">No notifications yet.</p>
-          <ul v-else class="notify-list">
+          <p v-if="loading" class="px-4 py-3 text-sm text-slate-400">Loading...</p>
+          <p v-else-if="!notifications.length" class="px-4 py-3 text-sm text-slate-400">No notifications yet.</p>
+          <ul v-else class="max-h-72 overflow-auto divide-y divide-slate-50">
             <li
               v-for="item in notifications"
               :key="item.id"
-              class="notify-item"
-              :class="{ unread: !item.is_read }"
+              class="px-4 py-3 cursor-pointer hover:bg-slate-50 transition"
+              :class="{ 'bg-indigo-50': !item.is_read }"
               @click="openNotification(item)"
             >
-              <p>{{ item.message }}</p>
-              <small>{{ formatDate(item.created_at) }}</small>
+              <p class="text-sm text-slate-700">{{ item.message }}</p>
+              <small class="text-xs text-slate-400">{{ formatDate(item.created_at) }}</small>
             </li>
           </ul>
         </div>
       </div>
-      <button class="logout-btn" @click="logout">Logout</button>
+
+      <!-- Logout -->
+      <button
+        class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition"
+        @click="logout"
+      >Logout</button>
     </div>
   </header>
 </template>
@@ -43,27 +63,18 @@ import { Bell } from 'lucide-vue-next';
 export default {
   components: { Bell },
   data() {
-    return {
-      showNotifications: false,
-      notifications: [],
-      loading: false,
-      pollTimer: null
-    };
+    return { showNotifications: false, notifications: [], loading: false, pollTimer: null };
   },
   computed: {
     pageTitle() {
       const map = {
-        '/dashboard': 'Dashboard',
-        '/tasks': 'Tasks',
-        '/projects': 'Projects',
-        '/members': 'Members',
-        '/inbox-email': 'Messages',
-        '/settings': 'Settings'
+        '/dashboard': 'Dashboard', '/tasks': 'Tasks', '/projects': 'Projects',
+        '/members': 'Members', '/inbox-email': 'Messages', '/settings': 'Settings'
       };
       return map[this.$route.path] || 'Task Manager';
     },
     unreadCount() {
-      return this.notifications.filter((item) => !item.is_read).length;
+      return this.notifications.filter(n => !n.is_read).length;
     }
   },
   async mounted() {
@@ -87,197 +98,31 @@ export default {
         this.loading = false;
       }
     },
-    toggleNotifications() {
-      this.showNotifications = !this.showNotifications;
-    },
+    toggleNotifications() { this.showNotifications = !this.showNotifications; },
     async markAsRead(item) {
       if (item.is_read) return;
-      try {
-        await api.put(`/notifications/${item.id}/read`);
-        item.is_read = true;
-      } catch (err) {
-        console.error('Failed to mark notification', err);
-      }
+      try { await api.put(`/notifications/${item.id}/read`); item.is_read = true; }
+      catch (err) { console.error(err); }
     },
     async markAllAsRead() {
       try {
         await api.put('/notifications/read-all');
-        this.notifications = this.notifications.map((item) => ({ ...item, is_read: true }));
-      } catch (err) {
-        console.error('Failed to mark all notifications', err);
-      }
+        this.notifications = this.notifications.map(n => ({ ...n, is_read: true }));
+      } catch (err) { console.error(err); }
     },
     async openNotification(item) {
       await this.markAsRead(item);
       this.showNotifications = false;
       if (!item.task_id) return;
-      this.$router.push({
-        path: '/tasks',
-        query: { taskId: String(item.task_id), from: 'notification', t: String(Date.now()) }
-      });
+      this.$router.push({ path: '/tasks', query: { taskId: String(item.task_id), from: 'notification', t: String(Date.now()) } });
     },
-    formatDate(value) {
-      return new Date(value).toLocaleString();
-    },
+    formatDate(value) { return new Date(value).toLocaleString(); },
     handleOutsideClick(event) {
       if (!this.showNotifications) return;
       const root = this.$refs.notifyWrap;
-      if (!root) return;
-      if (!root.contains(event.target)) {
-        this.showNotifications = false;
-      }
+      if (root && !root.contains(event.target)) this.showNotifications = false;
     },
-    logout() {
-      localStorage.removeItem('token');
-      this.$router.push('/login');
-    }
+    logout() { localStorage.removeItem('token'); this.$router.push('/login'); }
   }
 };
 </script>
-
-<style scoped>
-.topbar {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95) 0%, rgba(238, 242, 255, 0.9) 100%);
-  border-bottom: 1px solid #dbeafe;
-  padding: 14px 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
-}
-
-.topbar h2 {
-  font-size: 22px;
-  color: #1e1b4b;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.notify-wrap {
-  position: relative;
-}
-
-.icon-btn {
-  border: 1px solid #dbeafe;
-  background: #fff;
-  color: #334155;
-  border-radius: 10px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  line-height: 0;
-  cursor: pointer;
-  position: relative;
-}
-
-.icon-btn:hover {
-  background: #f1f5f9;
-}
-
-.icon {
-  width: 18px;
-  height: 18px;
-  display: block;
-}
-
-.badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  padding: 0 5px;
-  display: grid;
-  place-items: center;
-  background: #ef4444;
-  color: white;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.notify-panel {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  width: min(360px, 80vw);
-  background: #fff;
-  border: 1px solid #dbeafe;
-  border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-  z-index: 20;
-  overflow: hidden;
-}
-
-.notify-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.notify-tools {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.link-btn {
-  background: transparent;
-  border: none;
-  color: #4f46e5;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.notify-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 320px;
-  overflow: auto;
-}
-
-.notify-item {
-  padding: 10px 12px;
-  border-bottom: 1px solid #f1f5f9;
-  cursor: pointer;
-}
-
-.notify-item p {
-  color: #334155;
-  font-size: 14px;
-}
-
-.notify-item small {
-  color: #64748b;
-}
-
-.notify-item.unread {
-  background: #eef2ff;
-}
-
-.empty {
-  padding: 14px 12px;
-  color: #64748b;
-}
-
-.logout-btn {
-  background: #dc2626;
-}
-
-.logout-btn:hover {
-  background: #b91c1c;
-}
-</style>

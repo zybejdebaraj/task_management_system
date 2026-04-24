@@ -10,6 +10,7 @@ import ProjectsPage from '../views/projects.vue';
 import InboxEmailPage from '../views/inboxEmail.vue';
 import SettingsPage from '../views/settings.vue';
 import MembersPage from '../views/members.vue';
+import AuditLogPage from '../views/auditLog.vue';
 
 const isAuthenticated = () => {
   return !!getUser();
@@ -97,6 +98,15 @@ const routes = [
       if (!isAuthenticated()) {
         return '/login';
       }
+      return true;
+    }
+  },
+  {
+    path: '/audit-log',
+    component: AuditLogPage,
+    beforeEnter: (to, from) => {
+      if (!isAuthenticated()) return '/login';
+      if (!isAdminUser()) return '/dashboard';
       return true;
     }
   }
