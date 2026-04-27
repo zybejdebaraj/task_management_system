@@ -11,6 +11,8 @@ import InboxEmailPage from '../views/inboxEmail.vue';
 import SettingsPage from '../views/settings.vue';
 import MembersPage from '../views/members.vue';
 import AuditLogPage from '../views/auditLog.vue';
+import ForgotPasswordPage from '../views/forgotPassword.vue';
+import ResetPasswordPage from '../views/resetPassword.vue';
 
 const isAuthenticated = () => {
   return !!getUser();
@@ -34,6 +36,8 @@ const routes = [
   },
   { path: '/login', component: login },
   { path: '/register', component: register },
+  { path: '/forgot-password', component: ForgotPasswordPage },
+  { path: '/reset-password', component: ResetPasswordPage },
 
   {
     path: '/dashboard',

@@ -80,7 +80,7 @@ import { getUser } from '@/utils/auth';
 
 export default {
   data() {
-    return { user: null, tasks: [], projects: [], statusChart: null, projectChart: null, throughputChart: null, projectProgressChart: null, refreshTimer: null, onFocus: null };
+    return { user: null, tasks: [], projects: [], statusChart: null, projectChart: null, throughputChart: null, projectProgressChart: null };
   },
   computed: {
     isAdminUser() { return this.user?.role === 'admin'; },
@@ -140,22 +140,9 @@ export default {
     this.user = getUser();
     await this.loadData();
     this.renderCharts();
-
-    this.refreshTimer = window.setInterval(async () => {
-      await this.loadData();
-      this.renderCharts();
-    }, 30000);
-
-    this.onFocus = async () => {
-      await this.loadData();
-      this.renderCharts();
-    };
-    window.addEventListener('focus', this.onFocus);
   },
   beforeUnmount() {
     this.destroyCharts();
-    if (this.refreshTimer) window.clearInterval(this.refreshTimer);
-    if (this.onFocus) window.removeEventListener('focus', this.onFocus);
   },
   methods: {
     async loadData() {

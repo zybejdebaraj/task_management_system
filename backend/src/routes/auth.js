@@ -9,6 +9,8 @@ const {
   adminDeleteMember,
   adminUpdateMember,
   adminCreateMember,
+  forgotPassword,
+  resetPassword,
   getMySettings,
   updateMyProfile,
   updateMyPassword,
@@ -20,6 +22,8 @@ const isAdmin = require('../middleware/role');
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.get('/users', auth, isAdmin, getUsers);
 router.get('/members', auth, isAdmin, getMembers);
 router.post('/admin/members', auth, isAdmin, adminCreateMember);

@@ -63,6 +63,69 @@
       </div>
     </section>
 
+    <!-- Audit Log (admin only) -->
+    <section v-if="isAdmin" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+      <div class="flex items-center justify-between gap-4 flex-wrap">
+        <h3 class="font-bold text-slate-800 text-xl">Audit Log</h3>
+        <input
+          v-model="auditSearch"
+          placeholder="Search by task, user or action..."
+          class="block w-72 rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+        />
+      </div>
+      <div class="overflow-hidden rounded-xl border border-slate-200">
+        <div class="overflow-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-100 text-slate-400 text-xs uppercase tracking-wide">
+                <th class="text-left px-5 py-3 font-semibold">When</th>
+                <th class="text-left px-5 py-3 font-semibold">Task</th>
+                <th class="text-left px-5 py-3 font-semibold">Action</th>
+                <th class="text-left px-5 py-3 font-semibold">Detail</th>
+                <th class="text-left px-5 py-3 font-semibold">By</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+              <tr v-if="auditLoading">
+                <td colspan="5" class="px-5 py-8 text-center text-slate-400 text-sm">Loading activity...</td>
+              </tr>
+              <tr v-else-if="!filteredAuditRows.length">
+                <td colspan="5" class="px-5 py-8 text-center text-slate-400 text-sm">No activity found.</td>
+              </tr>
+              <tr v-else v-for="row in paginatedAuditRows" :key="row.id" class="hover:bg-slate-50 transition">
+                <td class="px-5 py-3 text-slate-400 text-xs whitespace-nowrap">{{ formatAuditDate(row.created_at) }}</td>
+                <td class="px-5 py-3">
+                  <span class="font-semibold text-slate-800">{{ row.task_title || '—' }}</span>
+                  <span class="text-slate-400 text-xs ml-1">#{{ row.task_id }}</span>
+                </td>
+                <td class="px-5 py-3">
+                  <span :class="auditActionClass(row.action)" class="text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">{{ row.action }}</span>
+                </td>
+                <td class="px-5 py-3 text-slate-600 text-xs max-w-xs truncate">{{ row.detail || '—' }}</td>
+                <td class="px-5 py-3 text-slate-500 text-xs">{{ row.username || row.email || 'System' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Pagination -->
+      <div v-if="auditTotalPages > 1" class="flex items-center justify-between pt-2">
+        <p class="text-xs text-slate-400">Page {{ auditPage }} of {{ auditTotalPages }} &middot; {{ filteredAuditRows.length }} entries</p>
+        <div class="flex gap-2">
+          <button
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+            :disabled="auditPage === 1"
+            @click="auditPage--"
+          >Previous</button>
+          <button
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+            :disabled="auditPage === auditTotalPages"
+            @click="auditPage++"
+          >Next</button>
+        </div>
+      </div>
+    </section>
+
     <!-- SMTP / Email account -->
     <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
       <div>
@@ -126,10 +189,12 @@
 <script>
 import api from '../api/api';
 import { toast } from '@/utils/toast';
+import { isAdmin } from '@/utils/auth';
 
 export default {
   data() {
     return {
+      isAdmin: false,
       profile: { username: '', email: '' },
       password: { currentPassword: '', newPassword: '' },
       preferences: { notifications_enabled: true, dark_mode: false },
@@ -142,12 +207,59 @@ export default {
         smtp_secure: false,
         has_smtp_pass: false,
       },
+      auditRows: [],
+      auditLoading: false,
+      auditSearch: '',
+      auditPage: 1,
+      auditPageSize: 20,
       message: '',
       error: ''
     };
   },
-  async mounted() { await this.loadSettings(); },
+  computed: {
+    filteredAuditRows() {
+      const q = this.auditSearch.trim().toLowerCase();
+      if (!q) return this.auditRows;
+      return this.auditRows.filter(r =>
+        (r.task_title || '').toLowerCase().includes(q) ||
+        (r.action || '').toLowerCase().includes(q) ||
+        (r.detail || '').toLowerCase().includes(q) ||
+        (r.username || r.email || '').toLowerCase().includes(q)
+      );
+    },
+    auditTotalPages() {
+      return Math.max(1, Math.ceil(this.filteredAuditRows.length / this.auditPageSize));
+    },
+    paginatedAuditRows() {
+      const start = (this.auditPage - 1) * this.auditPageSize;
+      return this.filteredAuditRows.slice(start, start + this.auditPageSize);
+    }
+  },
+  watch: {
+    auditSearch() { this.auditPage = 1; }
+  },
+  async mounted() {
+    this.isAdmin = isAdmin();
+    await this.loadSettings();
+    if (this.isAdmin) await this.loadAuditLog();
+  },
   methods: {
+    async loadAuditLog() {
+      this.auditLoading = true;
+      try { const res = await api.get('/tasks/activity/all'); this.auditRows = res.data; }
+      catch (err) { console.error(err); }
+      finally { this.auditLoading = false; }
+    },
+    formatAuditDate(value) { return new Date(value).toLocaleString(); },
+    auditActionClass(action) {
+      if (!action) return 'bg-slate-100 text-slate-500';
+      const a = action.toLowerCase();
+      if (a.includes('creat')) return 'bg-green-100 text-green-700';
+      if (a.includes('delet')) return 'bg-red-100 text-red-700';
+      if (a.includes('complet') || a.includes('done')) return 'bg-blue-100 text-blue-700';
+      if (a.includes('updat') || a.includes('edit') || a.includes('mov')) return 'bg-amber-100 text-amber-700';
+      return 'bg-slate-100 text-slate-500';
+    },
     async loadSettings() {
       try {
         const res = await api.get('/auth/me');

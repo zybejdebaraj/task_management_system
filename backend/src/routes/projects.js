@@ -11,6 +11,7 @@ const {
   joinProject,
   listProjectMembers,
   addProjectMember,
+  removeProjectMember,
 } = require('../controllers/projectController');
 
 router.get('/', auth, listProjects);
@@ -20,5 +21,6 @@ router.delete('/:id', auth, isAdmin, deleteProject);
 router.post('/:id/join', auth, joinProject);
 router.get('/:id/members', auth, isAdmin, listProjectMembers);
 router.post('/:id/members', auth, isAdmin, addProjectMember);
+router.delete('/:id/members/:userId', auth, isAdmin, removeProjectMember);
 
 module.exports = router;

@@ -1,6 +1,8 @@
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 exports.register = async (req, res) => {
   const { email, password, role, username } = req.body;
@@ -182,6 +184,74 @@ exports.adminCreateMember = async (req, res) => {
     );
 
     res.status(201).json(createdUser.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required' });
+
+  try {
+    const user = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (!user.rows.length) {
+      return res.json({ message: 'If that email exists, you will receive reset instructions.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000);
+    await pool.query(
+      'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
+      [token, expires, user.rows[0].id]
+    );
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+
+    const smtpConfigured = process.env.SMTP_USER && process.env.SMTP_PASS;
+    if (smtpConfigured) {
+      const transporter = nodemailer.createTransport(
+        process.env.SMTP_HOST
+          ? { host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === 'true', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } }
+          : { service: process.env.SMTP_SERVICE, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } }
+      );
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: email,
+        subject: 'Password Reset Request',
+        text: `Click the link below to reset your password. It expires in 1 hour.\n\n${resetUrl}`,
+      });
+    }
+
+    res.json({ message: 'If that email exists, you will receive reset instructions.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) {
+    return res.status(400).json({ message: 'Token and new password are required' });
+  }
+
+  try {
+    const user = await pool.query(
+      'SELECT id FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()',
+      [token]
+    );
+    if (!user.rows.length) {
+      return res.status(400).json({ message: 'Invalid or expired reset link' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await pool.query(
+      'UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2',
+      [hashedPassword, user.rows[0].id]
+    );
+
+    res.json({ message: 'Password reset successfully. You can now log in.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

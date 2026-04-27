@@ -112,7 +112,14 @@ export default {
     },
     async saveSelectedMembers(projectId) {
       const desired = new Set((this.selectedMemberIds || []).map(String));
-      await Promise.allSettled([...desired].map(id => api.post(`/projects/${projectId}/members`, { user_id: id })));
+      const res = await api.get(`/projects/${projectId}/members`);
+      const current = new Set((res.data || []).map(u => String(u.id)));
+      const toAdd = [...desired].filter(id => !current.has(id));
+      const toRemove = [...current].filter(id => !desired.has(id));
+      await Promise.allSettled([
+        ...toAdd.map(id => api.post(`/projects/${projectId}/members`, { user_id: id })),
+        ...toRemove.map(id => api.delete(`/projects/${projectId}/members/${id}`)),
+      ]);
     },
     async fetchProjects() {
       try { const res = await api.get('/projects'); this.projects = res.data; }

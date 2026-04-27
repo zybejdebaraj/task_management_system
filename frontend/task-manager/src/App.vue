@@ -23,7 +23,7 @@ export default {
   components: { Navbar, Topbar, ToastHost },
   computed: {
     showNavbar() {
-      const hiddenRoutes = ['/', '/login', '/register'];
+      const hiddenRoutes = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
       return !hiddenRoutes.includes(this.$route.path);
     }
   }

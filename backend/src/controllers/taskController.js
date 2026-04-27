@@ -37,8 +37,10 @@ exports.getTasks = async (req, res) => {
          LEFT JOIN projects p ON p.id = t.project_id
          LEFT JOIN users u ON u.id = t.user_id
          LEFT JOIN task_attachments ta ON ta.task_id = t.id
+         WHERE p.created_by = $1
          GROUP BY t.id, p.name, u.email, u.username
-         ORDER BY t.id DESC`
+         ORDER BY t.id DESC`,
+        [req.user.id]
       );
     } else {
       tasks = await pool.query(
@@ -84,6 +86,14 @@ exports.createTask = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Only admin can create tasks' });
+    }
+
+    const projectOwnership = await pool.query(
+      'SELECT id FROM projects WHERE id = $1 AND created_by = $2',
+      [project_id, req.user.id]
+    );
+    if (!projectOwnership.rows.length) {
+      return res.status(403).json({ message: 'You can only create tasks in your own projects' });
     }
 
     const assigneeId = user_id ?? req.user.id;
@@ -172,9 +182,15 @@ exports.deleteTask = async (req, res) => {
       return res.status(403).json({ message: 'Only admin can delete tasks' });
     }
 
-    const deleted = await pool.query('DELETE FROM tasks WHERE id = $1 RETURNING id', [id]);
+    const deleted = await pool.query(
+      `DELETE FROM tasks
+       WHERE id = $1
+         AND project_id IN (SELECT id FROM projects WHERE created_by = $2)
+       RETURNING id`,
+      [id, req.user.id]
+    );
     if (!deleted.rows.length) {
-      return res.status(404).json({ message: 'Task not found' });
+      return res.status(403).json({ message: 'Task not found or not authorized' });
     }
 
     res.json({ message: 'Task deleted' });
@@ -190,7 +206,11 @@ exports.updateTask = async (req, res) => {
 
   try {
     const existingTask = await pool.query(
-      'SELECT title, description, status, completed_at, user_id, project_id, due_date, priority, is_big FROM tasks WHERE id = $1',
+      `SELECT t.title, t.description, t.status, t.completed_at, t.user_id, t.project_id,
+              t.due_date, t.priority, t.is_big, p.created_by AS project_owner_id
+       FROM tasks t
+       LEFT JOIN projects p ON p.id = t.project_id
+       WHERE t.id = $1`,
       [id]
     );
     if (!existingTask.rows.length) {
@@ -204,20 +224,24 @@ exports.updateTask = async (req, res) => {
       return res.status(400).json({ message: 'Done tasks cannot be moved back' });
     }
 
-    // Only the assigned member can change status
-    if (status && status !== existing.status) {
-      if (!existing.user_id || Number(existing.user_id) !== Number(req.user.id)) {
-        return res.status(403).json({ message: 'Only the assigned member can change task status' });
+    if (req.user.role === 'admin') {
+      // Admin can only touch tasks in their own projects
+      if (Number(existing.project_owner_id) !== Number(req.user.id)) {
+        return res.status(403).json({ message: 'Not authorized to update tasks in this project' });
       }
-    }
-
-    // Members can only update tasks assigned to them, and only status.
-    if (req.user.role !== 'admin') {
+    } else {
+      // Members can only update tasks assigned to them, and only status.
       if (!existing.user_id || Number(existing.user_id) !== Number(req.user.id)) {
         return res.status(403).json({ message: 'You can only update tasks assigned to you' });
       }
       if (title || description || project_id || user_id || due_date || priority || is_big !== undefined) {
         return res.status(403).json({ message: 'Members can only update task status' });
+      }
+      // Members can only change status of their own assigned tasks
+      if (status && status !== existing.status) {
+        if (!existing.user_id || Number(existing.user_id) !== Number(req.user.id)) {
+          return res.status(403).json({ message: 'Only the assigned member can change task status' });
+        }
       }
     }
 
@@ -267,20 +291,20 @@ exports.updateTask = async (req, res) => {
       await createNotification(finalAssigneeId, id, reassignedMessage);
     }
 
-    // Notify admins when a member completes a task.
+    // Notify only the project-owning admin when a member completes a task.
     if (existing.status !== 'done' && finalStatus === 'done' && req.user.role !== 'admin') {
-      const admins = await pool.query(
-        `SELECT id
-         FROM users
-         WHERE role = 'admin'`
+      const projectOwner = await pool.query(
+        `SELECT created_by AS id FROM projects WHERE id = $1`,
+        [finalProjectId]
       );
-      const actorName = req.user.username || req.user.email || 'A member';
-      const completionMessage = `${actorName} completed task "${trimmedFinalTitle}".`;
-      await Promise.all(
-        admins.rows
-          .filter((admin) => Number(admin.id) !== Number(req.user.id))
-          .map((admin) => createNotification(admin.id, id, completionMessage))
-      );
+      if (projectOwner.rows.length && Number(projectOwner.rows[0].id) !== Number(req.user.id)) {
+        const actorName = req.user.username || req.user.email || 'A member';
+        await createNotification(
+          projectOwner.rows[0].id,
+          id,
+          `${actorName} completed task "${trimmedFinalTitle}".`
+        );
+      }
     }
 
     const changes = [];
@@ -312,9 +336,12 @@ exports.getAllActivity = async (req, res) => {
               ta.created_at, u.username, u.email
        FROM task_activity ta
        LEFT JOIN tasks t ON t.id = ta.task_id
+       LEFT JOIN projects p ON p.id = t.project_id
        LEFT JOIN users u ON u.id = ta.actor_user_id
+       WHERE p.created_by = $1
        ORDER BY ta.created_at DESC, ta.id DESC
-       LIMIT 500`
+       LIMIT 500`,
+      [req.user.id]
     );
     res.json(result.rows);
   } catch (err) {
@@ -325,11 +352,21 @@ exports.getAllActivity = async (req, res) => {
 exports.getTaskActivity = async (req, res) => {
   const { id } = req.params;
   try {
-    const task = await pool.query('SELECT id, user_id FROM tasks WHERE id = $1', [id]);
+    const task = await pool.query(
+      `SELECT t.id, t.user_id, p.created_by AS project_owner_id
+       FROM tasks t
+       LEFT JOIN projects p ON p.id = t.project_id
+       WHERE t.id = $1`,
+      [id]
+    );
     if (!task.rows.length) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    if (req.user.role !== 'admin' && Number(task.rows[0].user_id) !== Number(req.user.id)) {
+    if (req.user.role === 'admin') {
+      if (Number(task.rows[0].project_owner_id) !== Number(req.user.id)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+    } else if (Number(task.rows[0].user_id) !== Number(req.user.id)) {
       return res.status(403).json({ message: 'Access denied' });
     }
 

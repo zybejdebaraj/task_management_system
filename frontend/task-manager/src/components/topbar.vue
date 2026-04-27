@@ -71,7 +71,7 @@ export default {
         '/dashboard': 'Dashboard', '/tasks': 'Tasks', '/projects': 'Projects',
         '/members': 'Members', '/inbox-email': 'Messages', '/settings': 'Settings'
       };
-      return map[this.$route.path] || 'Task Manager';
+      return map[this.$route.path] || 'IdealTask';
     },
     unreadCount() {
       return this.notifications.filter(n => !n.is_read).length;

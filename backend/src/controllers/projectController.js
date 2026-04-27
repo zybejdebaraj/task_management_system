@@ -7,7 +7,9 @@ const listProjects = async (req, res) => {
         `SELECT p.*, u.email AS created_by_email
          FROM projects p
          LEFT JOIN users u ON u.id = p.created_by
-         ORDER BY p.id DESC`
+         WHERE p.created_by = $1
+         ORDER BY p.id DESC`,
+        [req.user.id]
       );
       return res.json(result.rows);
     }
@@ -57,6 +59,14 @@ const updateProject = async (req, res) => {
       return res.status(400).json({ message: 'Project name is required' });
     }
 
+    const ownership = await pool.query(
+      'SELECT id FROM projects WHERE id = $1 AND created_by = $2',
+      [id, req.user.id]
+    );
+    if (!ownership.rows.length) {
+      return res.status(403).json({ message: 'Not authorized to update this project' });
+    }
+
     const result = await pool.query(
       `UPDATE projects
        SET name = $1, description = $2
@@ -78,10 +88,13 @@ const updateProject = async (req, res) => {
 const deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM projects WHERE id = $1 RETURNING id', [id]);
+    const result = await pool.query(
+      'DELETE FROM projects WHERE id = $1 AND created_by = $2 RETURNING id',
+      [id, req.user.id]
+    );
 
     if (!result.rows.length) {
-      return res.status(404).json({ message: 'Project not found' });
+      return res.status(403).json({ message: 'Not authorized or project not found' });
     }
 
     res.json({ message: 'Project deleted' });
@@ -116,9 +129,12 @@ const listProjectMembers = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const exists = await pool.query('SELECT id FROM projects WHERE id = $1', [id]);
+    const exists = await pool.query(
+      'SELECT id FROM projects WHERE id = $1 AND created_by = $2',
+      [id, req.user.id]
+    );
     if (!exists.rows.length) {
-      return res.status(404).json({ message: 'Project not found' });
+      return res.status(403).json({ message: 'Not authorized or project not found' });
     }
 
     const result = await pool.query(
@@ -145,9 +161,12 @@ const addProjectMember = async (req, res) => {
       return res.status(400).json({ message: 'user_id is required' });
     }
 
-    const projectExists = await pool.query('SELECT id FROM projects WHERE id = $1', [id]);
+    const projectExists = await pool.query(
+      'SELECT id FROM projects WHERE id = $1 AND created_by = $2',
+      [id, req.user.id]
+    );
     if (!projectExists.rows.length) {
-      return res.status(404).json({ message: 'Project not found' });
+      return res.status(403).json({ message: 'Not authorized or project not found' });
     }
 
     const userExists = await pool.query('SELECT id FROM users WHERE id = $1', [user_id]);
@@ -168,6 +187,29 @@ const addProjectMember = async (req, res) => {
   }
 };
 
+const removeProjectMember = async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+
+    const ownership = await pool.query(
+      'SELECT id FROM projects WHERE id = $1 AND created_by = $2',
+      [id, req.user.id]
+    );
+    if (!ownership.rows.length) {
+      return res.status(403).json({ message: 'Not authorized or project not found' });
+    }
+
+    await pool.query(
+      'DELETE FROM project_members WHERE project_id = $1 AND user_id = $2',
+      [id, userId]
+    );
+
+    res.json({ message: 'Member removed from project' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   listProjects,
   createProject,
@@ -176,4 +218,5 @@ module.exports = {
   joinProject,
   listProjectMembers,
   addProjectMember,
+  removeProjectMember,
 };
