@@ -20,6 +20,7 @@
       <!-- Table -->
       <div class="overflow-auto">
         <table class="w-full text-sm border-collapse">
+          <caption class="sr-only">Team members</caption>
           <thead>
             <tr class="bg-slate-50 text-slate-400 text-xs uppercase tracking-wide border-b border-slate-100">
               <th class="text-left px-5 py-3 font-semibold">Email</th>
@@ -29,7 +30,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-50">
-            <tr v-for="user in users" :key="user.id" class="hover:bg-slate-50 transition">
+            <tr v-for="user in paginatedUsers" :key="user.id" class="hover:bg-slate-50 transition">
               <td class="px-5 py-3 font-medium text-slate-800">{{ user.email }}</td>
               <td class="px-5 py-3">
                 <span :class="user.role === 'admin' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" class="text-xs font-bold px-2.5 py-0.5 rounded-full">{{ user.role }}</span>
@@ -48,6 +49,29 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalMemberPages > 1" class="flex items-center justify-between px-5 py-3 border-t border-slate-100">
+        <p class="text-xs text-slate-400">{{ users.length }} members · Page {{ memberPage }} of {{ totalMemberPages }}</p>
+        <div class="flex gap-2">
+          <button
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+            :disabled="memberPage === 1"
+            @click="memberPage--"
+          >← Prev</button>
+          <button
+            v-for="p in totalMemberPages" :key="p"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition"
+            :class="memberPage === p ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-200 bg-white hover:bg-slate-50'"
+            @click="memberPage = p"
+          >{{ p }}</button>
+          <button
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+            :disabled="memberPage === totalMemberPages"
+            @click="memberPage++"
+          >Next →</button>
+        </div>
       </div>
     </div>
 
@@ -94,7 +118,14 @@ import ConfirmModal from '@/components/confirmModal.vue';
 export default {
   components: { Pencil, Trash2, BaseModal, ConfirmModal },
   data() {
-    return { username: '', email: '', password: '', users: [], error: '', message: '', isAdminUser: false, editingMemberId: null, showMemberModal: false, showConfirm: false, confirmTarget: null };
+    return { username: '', email: '', password: '', users: [], error: '', message: '', isAdminUser: false, editingMemberId: null, showMemberModal: false, showConfirm: false, confirmTarget: null, memberPage: 1, memberPageSize: 5 };
+  },
+  computed: {
+    totalMemberPages() { return Math.max(1, Math.ceil(this.users.length / this.memberPageSize)); },
+    paginatedUsers() {
+      const start = (this.memberPage - 1) * this.memberPageSize;
+      return this.users.slice(start, start + this.memberPageSize);
+    }
   },
   async mounted() {
     this.isAdminUser = isAdmin();
@@ -102,7 +133,7 @@ export default {
   },
   methods: {
     async fetchUsers() {
-      try { const res = await api.get('/auth/members'); this.users = res.data; }
+      try { const res = await api.get('/auth/members'); this.users = res.data; this.memberPage = 1; }
       catch (err) { this.error = err.response?.data?.message || 'Failed to load users'; }
     },
     async createMember() {

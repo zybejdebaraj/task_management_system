@@ -65,63 +65,75 @@
 
     <!-- Audit Log (admin only) -->
     <section v-if="isAdmin" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+      <!-- Header -->
       <div class="flex items-center justify-between gap-4 flex-wrap">
-        <h3 class="font-bold text-slate-800 text-xl">Audit Log</h3>
+        <div>
+          <h3 class="font-bold text-slate-800 text-xl">Audit Log</h3>
+          <p class="text-sm text-slate-400 mt-0.5">{{ filteredAuditRows.length }} events recorded</p>
+        </div>
         <input
           v-model="auditSearch"
-          placeholder="Search by task, user or action..."
-          class="block w-72 rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+          placeholder="Search task, user or action..."
+          class="block w-64 rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
-      <div class="overflow-hidden rounded-xl border border-slate-200">
-        <div class="overflow-auto">
-          <table class="w-full text-sm border-collapse">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-100 text-slate-400 text-xs uppercase tracking-wide">
-                <th class="text-left px-5 py-3 font-semibold">When</th>
-                <th class="text-left px-5 py-3 font-semibold">Task</th>
-                <th class="text-left px-5 py-3 font-semibold">Action</th>
-                <th class="text-left px-5 py-3 font-semibold">Detail</th>
-                <th class="text-left px-5 py-3 font-semibold">By</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-50">
-              <tr v-if="auditLoading">
-                <td colspan="5" class="px-5 py-8 text-center text-slate-400 text-sm">Loading activity...</td>
-              </tr>
-              <tr v-else-if="!filteredAuditRows.length">
-                <td colspan="5" class="px-5 py-8 text-center text-slate-400 text-sm">No activity found.</td>
-              </tr>
-              <tr v-else v-for="row in paginatedAuditRows" :key="row.id" class="hover:bg-slate-50 transition">
-                <td class="px-5 py-3 text-slate-400 text-xs whitespace-nowrap">{{ formatAuditDate(row.created_at) }}</td>
-                <td class="px-5 py-3">
-                  <span class="font-semibold text-slate-800">{{ row.task_title || '—' }}</span>
-                  <span class="text-slate-400 text-xs ml-1">#{{ row.task_id }}</span>
-                </td>
-                <td class="px-5 py-3">
-                  <span :class="auditActionClass(row.action)" class="text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">{{ row.action }}</span>
-                </td>
-                <td class="px-5 py-3 text-slate-600 text-xs max-w-xs truncate">{{ row.detail || '—' }}</td>
-                <td class="px-5 py-3 text-slate-500 text-xs">{{ row.username || row.email || 'System' }}</td>
-              </tr>
-            </tbody>
-          </table>
+
+      <!-- Loading -->
+      <div v-if="auditLoading" class="flex items-center justify-center py-12 text-slate-400 text-sm">
+        <span class="animate-pulse">Loading activity...</span>
+      </div>
+
+      <!-- Empty -->
+      <div v-else-if="!paginatedAuditRows.length" class="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
+        <span class="text-3xl">📋</span>
+        <p class="text-sm font-medium">No activity found.</p>
+      </div>
+
+      <!-- Timeline -->
+      <div v-else class="space-y-3">
+        <div
+          v-for="row in paginatedAuditRows"
+          :key="row.id"
+          class="bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-200 hover:shadow-sm rounded-2xl px-4 py-3 transition-all"
+        >
+          <div class="flex items-start justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                :class="auditDotClass(row.action)">
+                {{ auditIcon(row.action) }}
+              </div>
+              <span :class="auditActionClass(row.action)" class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full">
+                {{ row.action }}
+              </span>
+              <span class="font-semibold text-slate-800 text-sm">{{ row.task_title || 'Unknown task' }}</span>
+              <span class="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">#{{ row.task_id }}</span>
+            </div>
+            <span class="text-xs text-slate-400 whitespace-nowrap shrink-0">{{ formatAuditDate(row.created_at) }}</span>
+          </div>
+          <p v-if="row.detail" class="text-xs text-slate-500 mt-1.5 leading-relaxed">{{ row.detail }}</p>
+          <div class="flex items-center gap-1.5 mt-2">
+            <div class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold grid place-items-center shrink-0">
+              {{ (row.username || row.email || 'S').charAt(0).toUpperCase() }}
+            </div>
+            <span class="text-xs text-slate-400">{{ row.username || row.email || 'System' }}</span>
+          </div>
         </div>
       </div>
+
       <!-- Pagination -->
-      <div v-if="auditTotalPages > 1" class="flex items-center justify-between pt-2">
-        <p class="text-xs text-slate-400">Page {{ auditPage }} of {{ auditTotalPages }} &middot; {{ filteredAuditRows.length }} entries</p>
+      <div v-if="auditTotalPages > 1" class="flex items-center justify-between pt-1">
+        <p class="text-xs text-slate-400">Page {{ auditPage }} of {{ auditTotalPages }}</p>
         <div class="flex gap-2">
           <button
             class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
             :disabled="auditPage === 1"
             @click="auditPage--"
-          >Previous</button>
+          >← Previous</button>
           <button
             class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
             :disabled="auditPage === auditTotalPages"
             @click="auditPage++"
-          >Next</button>
+          >Next →</button>
         </div>
       </div>
     </section>
@@ -211,7 +223,7 @@ export default {
       auditLoading: false,
       auditSearch: '',
       auditPage: 1,
-      auditPageSize: 20,
+      auditPageSize: 5,
       message: '',
       error: ''
     };
@@ -259,6 +271,24 @@ export default {
       if (a.includes('complet') || a.includes('done')) return 'bg-blue-100 text-blue-700';
       if (a.includes('updat') || a.includes('edit') || a.includes('mov')) return 'bg-amber-100 text-amber-700';
       return 'bg-slate-100 text-slate-500';
+    },
+    auditDotClass(action) {
+      if (!action) return 'bg-slate-100 text-slate-400';
+      const a = action.toLowerCase();
+      if (a.includes('creat')) return 'bg-green-100 text-green-600';
+      if (a.includes('delet')) return 'bg-red-100 text-red-600';
+      if (a.includes('complet') || a.includes('done')) return 'bg-blue-100 text-blue-600';
+      if (a.includes('updat') || a.includes('edit') || a.includes('mov')) return 'bg-amber-100 text-amber-600';
+      return 'bg-slate-100 text-slate-400';
+    },
+    auditIcon(action) {
+      if (!action) return '•';
+      const a = action.toLowerCase();
+      if (a.includes('creat')) return '✚';
+      if (a.includes('delet')) return '✕';
+      if (a.includes('complet') || a.includes('done')) return '✓';
+      if (a.includes('updat') || a.includes('edit') || a.includes('mov')) return '✎';
+      return '•';
     },
     async loadSettings() {
       try {

@@ -1,5 +1,5 @@
 <template>
-  <aside class="flex flex-col bg-gradient-to-b from-slate-900 to-indigo-950 text-white w-64 min-h-screen p-4 gap-6 border-r border-white/10 shrink-0">
+  <aside class="flex flex-col bg-gradient-to-b from-slate-900 to-indigo-950 text-white w-64 h-full p-4 gap-6 border-r border-white/10">
 
     <!-- Brand -->
     <div class="flex items-center gap-3 px-2 pt-2">

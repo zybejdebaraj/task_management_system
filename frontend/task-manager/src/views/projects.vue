@@ -16,7 +16,7 @@
     <!-- Project grid -->
     <ul class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-0 m-0 list-none">
       <li
-        v-for="project in projects"
+        v-for="project in paginatedProjects"
         :key="project.id"
         class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-3 relative hover:shadow-md transition group"
       >
@@ -34,6 +34,16 @@
         <div class="flex-1">
           <p class="font-bold text-slate-900 text-base mb-1 pr-6">{{ project.name }}</p>
           <p class="text-sm text-slate-400 leading-snug">{{ project.description || 'No description' }}</p>
+          <div v-if="isAdminUser && Number(project.task_count) > 0" class="mt-3">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs text-slate-400">{{ project.done_count }} / {{ project.task_count }} tasks done</span>
+              <span class="text-xs font-bold text-indigo-600">{{ Math.round(Number(project.done_count) / Number(project.task_count) * 100) }}%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-1.5">
+              <div class="bg-indigo-500 h-1.5 rounded-full transition-all" :style="{ width: Math.round(Number(project.done_count) / Number(project.task_count) * 100) + '%' }"></div>
+            </div>
+          </div>
+          <p v-else-if="isAdminUser" class="text-xs text-slate-300 mt-2">No tasks yet</p>
         </div>
 
         <div class="flex gap-2 pt-1 border-t border-slate-100">
@@ -44,6 +54,29 @@
         </div>
       </li>
     </ul>
+
+    <!-- Pagination -->
+    <div v-if="totalProjectPages > 1" class="flex items-center justify-between">
+      <p class="text-xs text-slate-400">{{ projects.length }} projects · Page {{ projectPage }} of {{ totalProjectPages }}</p>
+      <div class="flex gap-2">
+        <button
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+          :disabled="projectPage === 1"
+          @click="projectPage--"
+        >← Prev</button>
+        <button
+          v-for="p in totalProjectPages" :key="p"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition"
+          :class="projectPage === p ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-200 bg-white hover:bg-slate-50'"
+          @click="projectPage = p"
+        >{{ p }}</button>
+        <button
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+          :disabled="projectPage === totalProjectPages"
+          @click="projectPage++"
+        >Next →</button>
+      </div>
+    </div>
 
     <ConfirmModal
       v-model="showConfirm"
@@ -94,7 +127,14 @@ import ConfirmModal from '@/components/confirmModal.vue';
 export default {
   components: { Pencil, Users, BaseModal, ConfirmModal },
   data() {
-    return { name: '', description: '', projects: [], members: [], selectedMemberIds: [], editingProjectId: null, isAdminUser: false, showProjectModal: false, showConfirm: false, confirmTarget: null };
+    return { name: '', description: '', projects: [], members: [], selectedMemberIds: [], editingProjectId: null, isAdminUser: false, showProjectModal: false, showConfirm: false, confirmTarget: null, projectPage: 1, projectPageSize: 6 };
+  },
+  computed: {
+    totalProjectPages() { return Math.max(1, Math.ceil(this.projects.length / this.projectPageSize)); },
+    paginatedProjects() {
+      const start = (this.projectPage - 1) * this.projectPageSize;
+      return this.projects.slice(start, start + this.projectPageSize);
+    }
   },
   mounted() {
     this.isAdminUser = isAdmin();
@@ -122,7 +162,7 @@ export default {
       ]);
     },
     async fetchProjects() {
-      try { const res = await api.get('/projects'); this.projects = res.data; }
+      try { const res = await api.get('/projects'); this.projects = res.data; this.projectPage = 1; }
       catch (err) { toast.error(err.response?.data?.message || 'Failed to load projects'); }
     },
     async saveProject() {

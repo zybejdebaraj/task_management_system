@@ -175,7 +175,14 @@
           <p v-if="loadingComments" class="text-sm text-slate-400">Loading...</p>
           <div v-else class="space-y-3 max-h-52 overflow-auto mb-3">
             <div v-for="c in detailComments" :key="c.id" class="bg-white rounded-lg border border-slate-100 p-3">
-              <p class="text-sm text-slate-800"><span class="font-semibold">{{ c.username || c.email }}</span>: {{ c.content }}</p>
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-sm text-slate-800"><span class="font-semibold">{{ c.username || c.email }}</span>: {{ c.content }}</p>
+                <button
+                  v-if="user?.role === 'admin' || String(c.user_id) === String(user?.id)"
+                  class="text-slate-300 hover:text-red-500 bg-transparent border-none cursor-pointer p-0 text-base leading-none shrink-0 transition"
+                  @click="deleteDetailComment(c.id)"
+                >✕</button>
+              </div>
               <p class="text-xs text-slate-400 mt-1">{{ formatDate(c.created_at) }}</p>
             </div>
             <p v-if="!detailComments.length" class="text-sm text-slate-400">No comments yet.</p>
@@ -204,7 +211,8 @@ export default {
   data() {
     return {
       tasks: [], projects: [], editingTask: null, user: null, search: '', selectedProject: '', selectedPriority: '', selectedStatus: '', selectedAssignee: '',
-      showOnlyOverdue: false, showOnlyBig: false, error: '', refreshTimer: null, onFocus: null,
+      showOnlyOverdue: false, showOnlyBig: false,
+      error: '', refreshTimer: null, onFocus: null,
       showTaskModal: false, notifications: [], showDetailsModal: false, selectedTask: null,
       taskActivity: [], loadingActivity: false,
       detailComments: [], loadingComments: false, newDetailComment: '',
@@ -343,6 +351,12 @@ export default {
         this.newDetailComment = '';
         await this.loadDetailComments(this.selectedTask.id);
       } catch (err) { toast.error('Failed to add comment'); }
+    },
+    async deleteDetailComment(commentId) {
+      try {
+        await api.delete(`/comments/${commentId}`);
+        await this.loadDetailComments(this.selectedTask.id);
+      } catch (err) { toast.error('Failed to delete comment'); }
     },
     async toggleDetailSubtask(subtask) {
       try {

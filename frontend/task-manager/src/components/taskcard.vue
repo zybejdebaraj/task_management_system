@@ -53,8 +53,18 @@
     <!-- Comments -->
     <div class="space-y-2 mb-3">
       <div v-for="comment in comments" :key="comment.id" class="bg-slate-50 rounded-lg p-2.5 text-xs">
-        <span class="font-semibold text-slate-800">{{ comment.username }}</span>
-        <span class="text-slate-600">: {{ comment.content }}</span>
+        <div class="flex items-start justify-between gap-1">
+          <div>
+            <span class="font-semibold text-slate-800">{{ comment.username || comment.email }}</span>
+            <span class="text-slate-600">: {{ comment.content }}</span>
+          </div>
+          <button
+            v-if="canManage || String(comment.user_id) === String(viewerUserId)"
+            class="text-slate-300 hover:text-red-500 bg-transparent border-none cursor-pointer p-0 leading-none shrink-0 transition"
+            @click="deleteComment(comment.id)"
+            aria-label="Delete comment"
+          >✕</button>
+        </div>
         <p class="text-slate-400 text-[10px] mt-0.5">{{ formatDate(comment.created_at) }}</p>
       </div>
       <div class="flex items-center gap-2">
@@ -74,7 +84,10 @@
       <button v-if="canMove && task.status !== 'done'" class="action-btn" @click="$emit('move', { task, status: nextStatus(task.status) })" aria-label="Move right" data-tip="Move right">
         <ArrowRight class="w-3.5 h-3.5" />
       </button>
-      <button v-if="canManage" class="action-btn danger ml-auto" @click="showConfirm = true" aria-label="Delete" data-tip="Delete">
+      <button v-if="canManage" class="action-btn ml-auto" @click="duplicate" aria-label="Duplicate" data-tip="Duplicate">
+        <Copy class="w-3.5 h-3.5" />
+      </button>
+      <button v-if="canManage" class="action-btn danger" @click="showConfirm = true" aria-label="Delete" data-tip="Delete">
         <Trash2 class="w-3.5 h-3.5" />
       </button>
     </div>
@@ -90,12 +103,12 @@
 
 <script>
 import api from '../api/api';
-import { ArrowLeft, ArrowRight, Info, Pencil, Trash2 } from 'lucide-vue-next';
+import { ArrowLeft, ArrowRight, Info, Pencil, Trash2, Copy } from 'lucide-vue-next';
 import { toast } from '@/utils/toast';
 import ConfirmModal from '@/components/confirmModal.vue';
 
 export default {
-  components: { Pencil, ArrowLeft, ArrowRight, Trash2, Info, ConfirmModal },
+  components: { Pencil, ArrowLeft, ArrowRight, Trash2, Info, Copy, ConfirmModal },
   props: ['task', 'canManage', 'viewerUserId'],
   data() {
     return { comments: [], newComment: '', subtasks: [], newSubtask: '', showConfirm: false };
@@ -158,6 +171,14 @@ export default {
       if (!this.newComment.trim()) return;
       try { await api.post(`/tasks/${this.task.id}/comments`, { content: this.newComment }); this.newComment = ''; this.loadComments(); toast.success('Comment added'); }
       catch (err) { toast.error('Failed to add comment'); }
+    },
+    async deleteComment(commentId) {
+      try { await api.delete(`/comments/${commentId}`); this.loadComments(); }
+      catch (err) { toast.error('Failed to delete comment'); }
+    },
+    async duplicate() {
+      try { await api.post(`/tasks/${this.task.id}/duplicate`); this.$emit('deleted'); toast.success('Task duplicated'); }
+      catch (err) { toast.error(err.response?.data?.message || 'Failed to duplicate task'); }
     },
     async deleteTask() {
       try { await api.delete(`/tasks/${this.task.id}`); this.$emit('deleted'); toast.success('Task deleted'); }

@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div v-if="showNavbar" class="flex min-h-screen">
-      <Navbar />
-      <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
+    <div v-if="showNavbar" class="flex h-screen overflow-hidden">
+      <Navbar class="fixed top-0 left-0 h-screen z-20 w-64" />
+      <main class="flex flex-col min-w-0 bg-slate-50 flex-1 ml-64 h-screen overflow-y-auto">
         <Topbar />
         <div class="flex-1">
           <router-view />

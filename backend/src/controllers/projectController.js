@@ -4,10 +4,14 @@ const listProjects = async (req, res) => {
   try {
     if (req.user.role === 'admin') {
       const result = await pool.query(
-        `SELECT p.*, u.email AS created_by_email
+        `SELECT p.*, u.email AS created_by_email,
+                COUNT(t.id) AS task_count,
+                COUNT(CASE WHEN t.status = 'done' THEN 1 END) AS done_count
          FROM projects p
          LEFT JOIN users u ON u.id = p.created_by
+         LEFT JOIN tasks t ON t.project_id = p.id
          WHERE p.created_by = $1
+         GROUP BY p.id, u.email
          ORDER BY p.id DESC`,
         [req.user.id]
       );

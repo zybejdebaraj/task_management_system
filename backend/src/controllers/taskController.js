@@ -326,6 +326,38 @@ exports.updateTask = async (req, res) => {
   }
 };
 
+exports.duplicateTask = async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ message: 'Only admin can duplicate tasks' });
+
+    const existing = await pool.query(
+      `SELECT t.*, p.created_by AS project_owner_id
+       FROM tasks t LEFT JOIN projects p ON p.id = t.project_id
+       WHERE t.id = $1`,
+      [id]
+    );
+    if (!existing.rows.length) return res.status(404).json({ message: 'Task not found' });
+
+    const t = existing.rows[0];
+    if (Number(t.project_owner_id) !== Number(req.user.id)) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const copy = await pool.query(
+      `INSERT INTO tasks (title, description, status, project_id, created_by, user_id, due_date, priority, is_big)
+       VALUES ($1, $2, 'todo', $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [`${t.title} (copy)`, t.description, t.project_id, req.user.id, t.user_id, t.due_date, t.priority, t.is_big]
+    );
+
+    await logTaskActivity(copy.rows[0].id, req.user.id, 'task_created', `Duplicated from task #${id}`);
+    res.status(201).json(copy.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.getAllActivity = async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admins only' });
