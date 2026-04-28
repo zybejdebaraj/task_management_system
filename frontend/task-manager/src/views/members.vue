@@ -141,7 +141,8 @@ export default {
       if (!this.email || !this.password) { this.error = 'Email and password are required'; return; }
       try {
         await api.post('/auth/admin/members', { username: this.username || undefined, email: this.email, password: this.password });
-        toast.success('Member added'); this.username = ''; this.email = ''; this.password = '';
+        toast.success('Member added');
+        this.closeMemberModal();
         await this.fetchUsers();
       } catch (err) { this.error = err.response?.data?.message || 'Failed to add member'; toast.error(this.error); }
     },
@@ -150,7 +151,9 @@ export default {
       if (!this.email) { this.error = 'Email is required'; toast.error(this.error); return; }
       try {
         await api.put(`/auth/admin/members/${this.editingMemberId}`, { username: this.username || undefined, email: this.email, password: this.password || undefined });
-        toast.success('Member updated'); this.cancelEdit(); await this.fetchUsers();
+        toast.success('Member updated');
+        this.closeMemberModal();
+        await this.fetchUsers();
       } catch (err) { this.error = err.response?.data?.message || 'Failed to update member'; toast.error(this.error); }
     },
     submitMember() { if (this.editingMemberId) return this.updateMember(); return this.createMember(); },

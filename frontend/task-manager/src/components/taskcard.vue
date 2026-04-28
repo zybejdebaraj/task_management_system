@@ -4,9 +4,9 @@
     :class="isOverdue ? 'border-red-300 bg-red-50/30' : 'border-slate-200'"
   >
 
-    <!-- Edit button -->
+    <!-- Edit button (hidden for done tasks) -->
     <button
-      v-if="canManage"
+      v-if="canManage && task.status !== 'done'"
       class="absolute top-3 right-3 w-7 h-7 rounded-lg bg-transparent border-none text-slate-400 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center transition cursor-pointer"
       type="button"
       @click="$emit('edit', task)"
@@ -84,7 +84,7 @@
       <button v-if="canMove && task.status !== 'done'" class="action-btn" @click="$emit('move', { task, status: nextStatus(task.status) })" aria-label="Move right" data-tip="Move right">
         <ArrowRight class="w-3.5 h-3.5" />
       </button>
-      <button v-if="canManage" class="action-btn ml-auto" @click="duplicate" aria-label="Duplicate" data-tip="Duplicate">
+      <button v-if="canManage && task.status !== 'done'" class="action-btn ml-auto" @click="duplicate" aria-label="Duplicate" data-tip="Duplicate">
         <Copy class="w-3.5 h-3.5" />
       </button>
       <button v-if="canManage" class="action-btn danger" @click="showConfirm = true" aria-label="Delete" data-tip="Delete">
