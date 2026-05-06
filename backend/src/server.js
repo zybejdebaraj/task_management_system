@@ -16,6 +16,7 @@ const projectRoutes = require('./routes/projects');
 const commentRoutes = require('./routes/comments');
 const notificationRoutes = require('./routes/notifications');
 const subtaskRoutes = require('./routes/subtasks');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api', commentRoutes);
 app.use('/api', subtaskRoutes);
+app.use('/api/chat', chatRoutes);
 
 const bootstrap = async () => {
   try {

@@ -138,6 +138,8 @@ const ensureSchema = async () => {
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description TEXT;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS is_big BOOLEAN NOT NULL DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date TIMESTAMP;`);
+  await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'medium';`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS comments (
       id SERIAL PRIMARY KEY,

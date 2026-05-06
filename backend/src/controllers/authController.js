@@ -112,10 +112,19 @@ exports.adminDeleteMember = async (req, res) => {
       return res.status(400).json({ message: 'Only members can be deleted from this page' });
     }
 
+    // Clear all FK references so the DELETE cannot be blocked by constraints
+    await pool.query('UPDATE tasks SET user_id = NULL WHERE user_id = $1', [id]);
+    await pool.query('UPDATE tasks SET created_by = NULL WHERE created_by = $1', [id]);
+    await pool.query('UPDATE task_activity SET actor_user_id = NULL WHERE actor_user_id = $1', [id]);
+    await pool.query('DELETE FROM project_members WHERE user_id = $1', [id]);
+    await pool.query('DELETE FROM notifications WHERE user_id = $1', [id]);
+    await pool.query('DELETE FROM comments WHERE user_id = $1', [id]);
+    await pool.query('DELETE FROM reminder_log WHERE user_id = $1', [id]);
+
     const deleted = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
     res.json({ message: 'Member deleted', id: deleted.rows[0].id });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 

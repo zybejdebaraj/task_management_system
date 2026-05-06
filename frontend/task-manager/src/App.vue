@@ -15,6 +15,7 @@
     </div>
     <router-view v-else />
     <ToastHost />
+    <ChatWidget v-if="showNavbar" />
   </div>
 </template>
 
@@ -22,9 +23,10 @@
 import Navbar from './components/navbar.vue';
 import Topbar from './components/topbar.vue';
 import ToastHost from './components/toastHost.vue';
+import ChatWidget from './components/chatWidget.vue';
 
 export default {
-  components: { Navbar, Topbar, ToastHost },
+  components: { Navbar, Topbar, ToastHost, ChatWidget },
   data() {
     return { sidebarCollapsed: false };
   },
