@@ -3,6 +3,49 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { OAuth2Client } = require('google-auth-library');
+
+exports.googleAuth = async (req, res) => {
+  const { credential } = req.body;
+  if (!credential) return res.status(400).json({ message: 'Google credential is required' });
+
+  try {
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const { sub: googleId, email, name } = ticket.getPayload();
+
+    let result = await pool.query('SELECT * FROM users WHERE google_id = $1', [googleId]);
+
+    if (!result.rows.length) {
+      const byEmail = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      if (byEmail.rows.length) {
+        await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [googleId, byEmail.rows[0].id]);
+        result = byEmail;
+      } else {
+        result = await pool.query(
+          `INSERT INTO users (email, google_id, username, role)
+           VALUES ($1, $2, $3, 'member')
+           RETURNING *`,
+          [email, googleId, name || email.split('@')[0]]
+        );
+      }
+    }
+
+    const user = result.rows[0];
+    const token = jwt.sign(
+      { id: user.id, role: user.role, email: user.email, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token });
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid Google credential' });
+  }
+};
 
 exports.register = async (req, res) => {
   const { email, password, role, username } = req.body;

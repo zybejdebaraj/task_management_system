@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   register,
   login,
+  googleAuth,
   getUsers,
   getMembers,
   adminDeleteMember,
@@ -22,6 +23,7 @@ const isAdmin = require('../middleware/role');
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/google', googleAuth);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.get('/users', auth, isAdmin, getUsers);

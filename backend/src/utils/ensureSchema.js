@@ -6,7 +6,8 @@ const ensureSchema = async () => {
       id SERIAL PRIMARY KEY,
       username VARCHAR(120),
       email VARCHAR(255) UNIQUE NOT NULL,
-      password TEXT NOT NULL,
+      password TEXT,
+      google_id VARCHAR(255) UNIQUE,
       role VARCHAR(20) NOT NULL DEFAULT 'member',
       notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
       dark_mode BOOLEAN NOT NULL DEFAULT FALSE,
@@ -132,6 +133,8 @@ const ensureSchema = async () => {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE;`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN password DROP NOT NULL;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE SET NULL;`);
   await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;`);

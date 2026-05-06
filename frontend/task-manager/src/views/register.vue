@@ -33,6 +33,14 @@
           @click="register"
         >Create account</button>
 
+        <div class="mt-4 flex items-center gap-3">
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <span class="text-xs text-slate-400">or</span>
+          <div class="flex-1 h-px bg-slate-200"></div>
+        </div>
+
+        <div ref="googleBtn" class="mt-3 w-full flex justify-center"></div>
+
         <p class="mt-5 text-center text-sm text-slate-500">
           Already have an account?
           <span class="font-semibold text-indigo-600 cursor-pointer hover:underline" @click="$router.push('/login')">Sign in</span>
@@ -50,6 +58,9 @@ export default {
   data() {
     return { username: '', email: '', password: '', role: 'member', error: '' };
   },
+  mounted() {
+    this.initGoogle();
+  },
   methods: {
     async register() {
       if (!this.email || !this.password) { toast.error('Email and password are required'); return; }
@@ -61,7 +72,31 @@ export default {
       } catch (err) {
         toast.error(err.response?.data?.message || 'Register failed');
       }
-    }
-  }
+    },
+    initGoogle() {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId || !window.google) return;
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: this.handleGoogleCredential,
+      });
+      window.google.accounts.id.renderButton(this.$refs.googleBtn, {
+        theme: 'outline',
+        size: 'large',
+        width: '100%',
+        text: 'signup_with',
+      });
+    },
+    async handleGoogleCredential({ credential }) {
+      try {
+        const res = await api.post('/auth/google', { credential });
+        localStorage.setItem('token', res.data.token);
+        toast.success('Signed up with Google');
+        this.$router.push('/dashboard');
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Google sign-up failed');
+      }
+    },
+  },
 };
 </script>
