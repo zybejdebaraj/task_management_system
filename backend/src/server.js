@@ -25,6 +25,11 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
