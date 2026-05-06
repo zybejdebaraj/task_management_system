@@ -1,8 +1,12 @@
 <template>
   <div>
     <div v-if="showNavbar" class="flex h-screen overflow-hidden">
-      <Navbar class="fixed top-0 left-0 h-screen z-20 w-64" />
-      <main class="flex flex-col min-w-0 bg-slate-50 flex-1 ml-64 h-screen overflow-y-auto">
+      <Navbar
+        :collapsed="sidebarCollapsed"
+        :class="['fixed top-0 left-0 h-screen z-20 transition-all duration-300', sidebarCollapsed ? 'w-16' : 'w-64']"
+        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+      />
+      <main :class="['flex flex-col min-w-0 bg-slate-50 flex-1 h-screen overflow-y-auto transition-all duration-300', sidebarCollapsed ? 'ml-16' : 'ml-64']">
         <Topbar />
         <div class="flex-1">
           <router-view />
@@ -21,6 +25,9 @@ import ToastHost from './components/toastHost.vue';
 
 export default {
   components: { Navbar, Topbar, ToastHost },
+  data() {
+    return { sidebarCollapsed: false };
+  },
   computed: {
     showNavbar() {
       const hiddenRoutes = ['/', '/login', '/register', '/forgot-password', '/reset-password'];

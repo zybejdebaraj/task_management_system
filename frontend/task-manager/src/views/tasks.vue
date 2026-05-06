@@ -1,5 +1,5 @@
 <template>
-  <div class="p-5 space-y-4">
+  <div class="p-4 space-y-4">
 
     <!-- Toolbar -->
     <div class="flex items-center justify-end gap-3 flex-wrap">
@@ -406,3 +406,4 @@ export default {
   }
 };
 </script>
+

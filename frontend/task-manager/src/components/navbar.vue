@@ -1,54 +1,82 @@
 <template>
-  <aside class="flex flex-col bg-gradient-to-b from-slate-900 to-indigo-950 text-white w-64 h-full p-4 gap-6 border-r border-white/10">
+  <aside
+    :class="[
+      'flex flex-col bg-gradient-to-b from-slate-900 to-indigo-950 text-white h-full border-r border-white/10 transition-all duration-300',
+      collapsed ? 'w-16 p-2' : 'w-64 p-4'
+    ]"
+  >
+    <!-- Collapse button — floating on the right edge, aligned with brand row -->
+    <button
+      class="absolute -right-3.5 top-5 z-30 w-7 h-7 rounded-full bg-indigo-600 border-2 border-slate-900 text-white flex items-center justify-center shadow-md hover:bg-indigo-500 transition cursor-pointer"
+      type="button"
+      :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+      :title="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+      @click="$emit('toggle-collapse')"
+    >
+      <ChevronLeft v-if="!collapsed" class="w-3.5 h-3.5" />
+      <ChevronRight v-else class="w-3.5 h-3.5" />
+    </button>
 
     <!-- Brand -->
-    <div class="flex items-center gap-3 px-2 pt-2">
-      <div class="w-9 h-9 rounded-xl bg-indigo-600 grid place-items-center font-bold text-sm shrink-0">IT</div>
-      <span class="font-bold text-base tracking-tight">IdealTask</span>
+    <div :class="['flex items-center pt-2 pb-2', collapsed ? 'justify-center' : 'gap-3 px-2']">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 grid place-items-center font-bold text-sm shrink-0">IT</div>
+        <span v-if="!collapsed" class="font-bold text-base tracking-tight truncate">IdealTask</span>
+      </div>
     </div>
 
     <!-- Nav links -->
-    <nav class="flex flex-col gap-1 flex-1">
+    <nav class="flex flex-col gap-1 flex-1 mt-4">
       <router-link
         v-for="link in visibleLinks"
         :key="link.to"
         :to="link.to"
         active-class="bg-indigo-600/40 text-white"
-        class="nav-link"
+        :class="['nav-link', collapsed ? 'justify-center px-0' : '']"
+        :title="collapsed ? link.label : ''"
       >
         <component :is="link.icon" class="w-5 h-5 shrink-0" />
-        {{ link.label }}
+        <span v-if="!collapsed">{{ link.label }}</span>
       </router-link>
     </nav>
 
     <!-- User footer -->
-    <div class="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/10 border border-white/10">
-      <div class="w-8 h-8 rounded-full bg-white/20 border border-white/25 grid place-items-center text-xs font-bold shrink-0">
+    <div :class="['flex items-center rounded-xl bg-white/10 border border-white/10', collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-3']">
+      <div
+        class="w-8 h-8 rounded-full bg-white/20 border border-white/25 grid place-items-center text-xs font-bold shrink-0"
+        :title="collapsed ? displayName : ''"
+      >
         {{ userInitials }}
       </div>
-      <div class="min-w-0 flex-1">
-        <p class="text-sm font-semibold truncate leading-tight">{{ displayName }}</p>
-        <p class="text-xs text-slate-400 leading-tight">{{ isAdminUser ? 'Admin' : 'Member' }}</p>
-      </div>
-      <button
-        class="w-7 h-7 rounded-lg bg-transparent border-none text-slate-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition cursor-pointer shrink-0"
-        type="button"
-        aria-label="Log out"
-        title="Log out"
-        @click="logout"
-      >
-        <LogOut class="w-4 h-4" />
-      </button>
+      <template v-if="!collapsed">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold truncate leading-tight">{{ displayName }}</p>
+          <p class="text-xs text-slate-400 leading-tight">{{ isAdminUser ? 'Admin' : 'Member' }}</p>
+        </div>
+        <button
+          class="w-7 h-7 rounded-lg bg-transparent border-none text-slate-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition cursor-pointer shrink-0"
+          type="button"
+          aria-label="Log out"
+          title="Log out"
+          @click="logout"
+        >
+          <LogOut class="w-4 h-4" />
+        </button>
+      </template>
     </div>
   </aside>
 </template>
 
 <script>
 import { getUser, isAdmin } from '@/utils/auth';
-import { LayoutDashboard, ListTodo, FolderKanban, Users, Mail, Settings, LogOut } from 'lucide-vue-next';
+import { LayoutDashboard, ListTodo, FolderKanban, Users, Mail, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
 export default {
-  components: { LayoutDashboard, ListTodo, FolderKanban, Users, Mail, Settings, LogOut },
+  components: { LayoutDashboard, ListTodo, FolderKanban, Users, Mail, Settings, LogOut, ChevronLeft, ChevronRight },
+  props: {
+    collapsed: { type: Boolean, default: false }
+  },
+  emits: ['toggle-collapse'],
   data() {
     return { isAdminUser: false, user: null };
   },

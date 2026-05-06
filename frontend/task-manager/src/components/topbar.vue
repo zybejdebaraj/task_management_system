@@ -1,5 +1,5 @@
 <template>
-  <header class="sticky top-0 z-10 flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm">
+  <header class="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
     <h2 class="text-lg font-bold text-slate-800">{{ pageTitle }}</h2>
 
     <div class="flex items-center gap-3">

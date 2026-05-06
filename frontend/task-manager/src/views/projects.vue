@@ -1,5 +1,5 @@
 <template>
-  <div class="p-5 space-y-5">
+  <div class="p-4 space-y-5">
 
     <!-- Header -->
     <div class="flex items-center justify-between gap-4 flex-wrap">
@@ -205,3 +205,4 @@ export default {
   }
 };
 </script>
+

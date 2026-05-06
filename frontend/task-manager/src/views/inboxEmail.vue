@@ -1,5 +1,5 @@
-<template>
-  <div class="p-5">
+﻿<template>
+  <div class="p-4">
     <div class="flex gap-4 min-h-[76vh]">
 
       <!-- Left nav -->
@@ -134,3 +134,4 @@ export default {
   }
 };
 </script>
+

@@ -1,5 +1,5 @@
 <template>
-  <div class="p-5 space-y-5">
+  <div class="p-4 space-y-5">
 
     <div v-if="!isAdminUser" class="bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl px-5 py-4 text-sm font-medium">
       Only admins can manage members.
@@ -59,7 +59,7 @@
             class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
             :disabled="memberPage === 1"
             @click="memberPage--"
-          >← Prev</button>
+          >Prev</button>
           <button
             v-for="p in totalMemberPages" :key="p"
             class="px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition"
@@ -177,3 +177,4 @@ export default {
   }
 };
 </script>
+

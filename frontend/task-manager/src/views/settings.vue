@@ -1,5 +1,5 @@
 <template>
-  <div class="p-5 space-y-5">
+  <div class="p-4 space-y-5">
 
     <!-- Profile -->
     <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
@@ -349,3 +349,4 @@ export default {
   }
 };
 </script>
+

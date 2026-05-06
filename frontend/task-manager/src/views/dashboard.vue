@@ -1,5 +1,5 @@
-<template>
-  <div class="p-5 space-y-6">
+﻿<template>
+  <div class="p-4 space-y-6">
 
     <!-- Hero banner -->
     <section class="bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 text-white rounded-2xl px-6 py-5 shadow-lg">
@@ -176,3 +176,4 @@ export default {
   }
 };
 </script>
+
