@@ -45,7 +45,7 @@
           <span class="text-base font-medium text-slate-700">Email & in-app notifications</span>
           <div class="relative">
             <input v-model="preferences.notifications_enabled" type="checkbox" class="sr-only peer" />
-            <div class="w-12 h-7 bg-slate-200 peer-checked:bg-indigo-600 rounded-full transition peer-focus:ring-2 peer-focus:ring-indigo-400 peer-focus:ring-offset-1 cursor-pointer" @click="preferences.notifications_enabled = !preferences.notifications_enabled"></div>
+            <div class="w-12 h-7 bg-slate-200 peer-checked:bg-indigo-600 rounded-full transition cursor-pointer"></div>
             <div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5 pointer-events-none"></div>
           </div>
         </label>
@@ -53,7 +53,7 @@
           <span class="text-base font-medium text-slate-700">Dark mode</span>
           <div class="relative">
             <input v-model="preferences.dark_mode" type="checkbox" class="sr-only peer" />
-            <div class="w-12 h-7 bg-slate-200 peer-checked:bg-indigo-600 rounded-full transition peer-focus:ring-2 peer-focus:ring-indigo-400 peer-focus:ring-offset-1 cursor-pointer" @click="preferences.dark_mode = !preferences.dark_mode"></div>
+            <div class="w-12 h-7 bg-slate-200 peer-checked:bg-indigo-600 rounded-full transition cursor-pointer"></div>
             <div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5 pointer-events-none"></div>
           </div>
         </label>

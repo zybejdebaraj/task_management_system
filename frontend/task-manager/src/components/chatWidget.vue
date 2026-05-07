@@ -1,93 +1,77 @@
 <template>
-  <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+  <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
 
     <!-- Chat panel -->
     <transition name="chat-pop">
-      <div
-        v-if="open"
-        class="chat-panel flex flex-col overflow-hidden"
-        style="width: 360px; height: 520px"
-      >
+      <div v-if="open" class="chat-panel flex flex-col overflow-hidden" style="width:370px;height:540px">
+
         <!-- Header -->
-        <div class="chat-header shrink-0 flex items-center justify-between px-4 py-3">
+        <div class="chat-header shrink-0">
           <div class="flex items-center gap-3">
-            <div class="avatar">
-              <Sparkles class="w-4 h-4 text-indigo-600" />
+            <div class="bot-avatar">
+              <Sparkles class="w-4 h-4 text-white" />
             </div>
             <div>
-              <p class="text-sm font-bold text-slate-800 leading-tight">Task Assistant</p>
-              <p class="text-[11px] text-emerald-500 font-medium flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
-                Online
+              <p class="text-sm font-bold text-white leading-tight">Task Assistant</p>
+              <p class="text-[11px] font-medium flex items-center gap-1 text-indigo-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                Online · Powered by Groq
               </p>
             </div>
           </div>
           <div class="flex items-center gap-1">
-            <button
-              class="icon-btn"
-              title="Clear chat"
-              @click="clearChat"
-            >
+            <button class="header-btn" title="Clear chat" @click="clearChat">
               <RotateCcw class="w-3.5 h-3.5" />
             </button>
-            <button class="icon-btn" @click="open = false" aria-label="Close">
+            <button class="header-btn" aria-label="Close" @click="open = false">
               <X class="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         <!-- Messages -->
-        <div ref="messagesEl" class="flex-1 overflow-y-auto px-4 py-3 space-y-4 chat-messages">
+        <div ref="messagesEl" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 chat-messages">
 
-          <!-- Date chip -->
-          <div class="flex justify-center">
-            <span class="text-[10px] text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full font-medium">
-              {{ todayLabel }}
-            </span>
+          <div class="flex justify-center mb-2">
+            <span class="date-chip">{{ todayLabel }}</span>
           </div>
 
           <div
             v-for="(msg, i) in conversation"
             :key="i"
-            :class="['flex gap-2', msg.role === 'user' ? 'justify-end' : 'justify-start']"
+            :class="['flex gap-2 items-end', msg.role === 'user' ? 'justify-end' : 'justify-start']"
           >
-            <!-- AI avatar -->
-            <div v-if="msg.role === 'assistant'" class="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
-              <Sparkles class="w-3.5 h-3.5 text-indigo-600" />
+            <div v-if="msg.role === 'assistant'" class="bot-icon shrink-0">
+              <Sparkles class="w-3 h-3 text-indigo-500" />
             </div>
 
-            <div :class="['max-w-[78%]', msg.role === 'user' ? 'items-end' : 'items-start', 'flex flex-col gap-1']">
-              <div
-                :class="[
-                  'px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap',
-                  msg.role === 'user'
-                    ? 'user-bubble'
-                    : 'assistant-bubble'
-                ]"
-              >{{ msg.content }}</div>
-            </div>
+            <div
+              :class="[
+                'msg-bubble text-sm leading-relaxed whitespace-pre-wrap',
+                msg.role === 'user' ? 'user-bubble' : 'assistant-bubble'
+              ]"
+            >{{ msg.content }}</div>
 
-            <!-- User avatar -->
-            <div v-if="msg.role === 'user'" class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-              <User class="w-3.5 h-3.5 text-white" />
+            <div v-if="msg.role === 'user'" class="user-icon shrink-0">
+              <User class="w-3 h-3 text-white" />
             </div>
           </div>
 
           <!-- Typing indicator -->
-          <div v-if="loading" class="flex gap-2 justify-start">
-            <div class="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-              <Sparkles class="w-3.5 h-3.5 text-indigo-600" />
+          <div v-if="loading" class="flex gap-2 items-end justify-start">
+            <div class="bot-icon shrink-0">
+              <Sparkles class="w-3 h-3 text-indigo-500" />
             </div>
-            <div class="assistant-bubble px-4 py-3 flex gap-1.5 items-center">
+            <div class="assistant-bubble msg-bubble flex gap-1.5 items-center px-4 py-3">
               <span class="dot"></span>
-              <span class="dot" style="animation-delay: 0.15s"></span>
-              <span class="dot" style="animation-delay: 0.3s"></span>
+              <span class="dot" style="animation-delay:0.15s"></span>
+              <span class="dot" style="animation-delay:0.3s"></span>
             </div>
           </div>
         </div>
 
         <!-- Suggestions -->
-        <div v-if="conversation.length === 1 && !loading" class="px-4 pb-2 flex flex-wrap gap-1.5 shrink-0">
+        <div v-if="conversation.length === 1 && !loading" class="px-4 pb-3 flex flex-wrap gap-1.5 shrink-0 suggestions-area">
           <button
             v-for="s in suggestions"
             :key="s"
@@ -97,14 +81,14 @@
         </div>
 
         <!-- Input -->
-        <div class="chat-input-area shrink-0 px-3 pb-3 pt-2">
-          <div class="chat-input-box flex gap-2 items-end">
+        <div class="chat-footer shrink-0 px-3 pb-3 pt-2">
+          <div class="input-row">
             <textarea
               ref="inputEl"
               v-model="draft"
               rows="1"
-              placeholder="Ask about your tasks…"
-              class="chat-textarea"
+              placeholder="Message Task Assistant…"
+              class="chat-input"
               @keydown.enter.exact.prevent="send"
               @input="autoResize"
             />
@@ -117,15 +101,16 @@
               <SendHorizontal class="w-4 h-4" />
             </button>
           </div>
-          <p class="text-[10px] text-slate-400 mt-1.5 text-center">Powered by Groq · Enter to send</p>
+          <p class="text-[10px] text-center mt-1.5 footer-hint">Enter to send · Shift+Enter for new line</p>
         </div>
+
       </div>
     </transition>
 
-    <!-- Toggle button -->
+    <!-- Toggle FAB -->
     <button
-      class="toggle-btn"
-      :class="{ 'ring-4 ring-indigo-300/60': open }"
+      class="fab-btn"
+      :class="{ 'fab-open': open }"
       aria-label="Toggle assistant"
       @click="toggle"
     >
@@ -133,10 +118,9 @@
         <MessageCircle v-if="!open" key="open" class="w-6 h-6" />
         <X v-else key="close" class="w-6 h-6" />
       </transition>
-
-      <!-- Unread dot -->
-      <span v-if="!open && unread" class="unread-dot"></span>
+      <span v-if="!open && unread" class="unread-badge"></span>
     </button>
+
   </div>
 </template>
 
@@ -144,7 +128,7 @@
 import { Sparkles, X, SendHorizontal, MessageCircle, RotateCcw, User } from 'lucide-vue-next';
 import api from '@/api/api';
 
-const GREETING = 'Hi! I\'m your task assistant. Ask me about your tasks, deadlines, or workload.';
+const GREETING = "Hi! I'm your Task Assistant 👋\nAsk me about your tasks, deadlines, or anything about your workload.";
 
 export default {
   components: { Sparkles, X, SendHorizontal, MessageCircle, RotateCcw, User },
@@ -160,7 +144,7 @@ export default {
   },
   computed: {
     todayLabel() {
-      return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+      return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     },
   },
   methods: {
@@ -187,20 +171,15 @@ export default {
     async send() {
       const text = this.draft.trim();
       if (!text || this.loading) return;
-
       this.conversation.push({ role: 'user', content: text });
       this.draft = '';
       this.$nextTick(() => {
         if (this.$refs.inputEl) this.$refs.inputEl.style.height = 'auto';
         this.scrollBottom();
       });
-
       this.loading = true;
       try {
-        const apiMessages = this.conversation
-          .slice(1)
-          .map(m => ({ role: m.role, content: m.content }));
-
+        const apiMessages = this.conversation.slice(1).map(m => ({ role: m.role, content: m.content }));
         const { data } = await api.post('/chat', { messages: apiMessages });
         this.conversation.push({ role: 'assistant', content: data.reply });
         if (!this.open) this.unread = true;
@@ -220,186 +199,270 @@ export default {
 </script>
 
 <style scoped>
-/* Panel */
+/* ── CSS variables ────────────────────────────── */
 .chat-panel {
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px -10px rgba(0,0,0,0.18), 0 4px 20px -4px rgba(0,0,0,0.08);
-  border: 1px solid rgba(226,232,240,0.8);
+  --panel-bg:       #ffffff;
+  --msg-bg:         #f1f5f9;
+  --bubble-bg:      #ffffff;
+  --bubble-border:  #e2e8f0;
+  --bubble-color:   #1e293b;
+  --input-area-bg:  #ffffff;
+  --input-bg:       #f8fafc;
+  --input-border:   #e2e8f0;
+  --input-color:    #1e293b;
+  --footer-hint:    #94a3b8;
+  --date-bg:        #e2e8f0;
+  --date-color:     #64748b;
+  --icon-btn-hover: #f1f5f9;
+  --suggestion-bg:  #eef2ff;
+  --suggestion-border: #c7d2fe;
+  --suggestion-color: #4f46e5;
+}
+:global(.dark) .chat-panel {
+  --panel-bg:       #1e293b;
+  --msg-bg:         #0f172a;
+  --bubble-bg:      #1e293b;
+  --bubble-border:  #334155;
+  --bubble-color:   #e2e8f0;
+  --input-area-bg:  #1e293b;
+  --input-bg:       #0f172a;
+  --input-border:   #475569;
+  --input-color:    #f1f5f9;
+  --footer-hint:    #64748b;
+  --date-bg:        #1e293b;
+  --date-color:     #94a3b8;
+  --icon-btn-hover: #334155;
+  --suggestion-bg:  #1e2a4a;
+  --suggestion-border: #4338ca;
+  --suggestion-color: #a5b4fc;
 }
 
-/* Header */
-.chat-header {
-  background: #ffffff;
-  border-bottom: 1px solid #f1f5f9;
+/* ── Panel ────────────────────────────────────── */
+.chat-panel {
+  background: var(--panel-bg);
+  border-radius: 22px;
+  box-shadow: 0 24px 64px -12px rgba(0,0,0,0.2), 0 8px 24px -4px rgba(0,0,0,0.1);
+  border: 1px solid rgba(99,102,241,0.15);
+  overflow: hidden;
 }
-.avatar {
-  width: 36px;
-  height: 36px;
+
+/* ── Header ───────────────────────────────────── */
+.chat-header {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bot-avatar {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.3);
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(4px);
 }
-.icon-btn {
-  width: 28px;
-  height: 28px;
+.header-btn {
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   border: none;
-  background: transparent;
-  color: #94a3b8;
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s;
 }
-.icon-btn:hover {
-  background: #f1f5f9;
-  color: #475569;
+.header-btn:hover { background: rgba(255,255,255,0.22); color: #fff; }
+
+/* ── Messages ─────────────────────────────────── */
+.chat-messages { background: var(--msg-bg); }
+
+.date-chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--date-bg);
+  color: var(--date-color);
+  letter-spacing: 0.3px;
 }
 
-/* Messages */
-.chat-messages {
-  background: #f8fafc;
+.bot-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
+.user-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.msg-bubble { padding: 10px 14px; max-width: 82%; }
+
 .user-bubble {
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: #ffffff;
   border-radius: 18px 18px 4px 18px;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
 }
 .assistant-bubble {
-  background: #ffffff;
-  color: #1e293b;
+  background: var(--bubble-bg);
+  color: var(--bubble-color);
   border-radius: 18px 18px 18px 4px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  border: 1px solid var(--bubble-border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
-/* Typing dots */
+/* ── Typing dots ──────────────────────────────── */
 .dot {
-  width: 6px;
-  height: 6px;
+  width: 7px; height: 7px;
   border-radius: 50%;
   background: #94a3b8;
   display: inline-block;
-  animation: bounce 1s ease-in-out infinite;
+  animation: bounce 1.1s ease-in-out infinite;
 }
 @keyframes bounce {
   0%, 60%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-5px); }
+  30% { transform: translateY(-6px); }
 }
 
-/* Suggestions */
+/* ── Suggestions ──────────────────────────────── */
+.suggestions-area { border-top: 1px solid var(--bubble-border); padding-top: 10px; }
 .suggestion-chip {
   font-size: 11px;
-  font-weight: 500;
-  padding: 5px 10px;
+  font-weight: 600;
+  padding: 5px 12px;
   border-radius: 20px;
-  border: 1px solid #e0e7ff;
-  background: #eef2ff;
-  color: #4f46e5;
+  border: 1.5px solid var(--suggestion-border);
+  background: var(--suggestion-bg);
+  color: var(--suggestion-color);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: all 0.15s;
   white-space: nowrap;
 }
 .suggestion-chip:hover {
-  background: #e0e7ff;
-  border-color: #c7d2fe;
+  filter: brightness(0.93);
+  transform: translateY(-1px);
 }
 
-/* Input */
-.chat-input-area {
-  background: #ffffff;
-  border-top: 1px solid #f1f5f9;
+/* ── Input ────────────────────────────────────── */
+.chat-footer {
+  background: var(--input-area-bg);
+  border-top: 1px solid var(--bubble-border);
 }
-.chat-input-box {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 6px 6px 6px 12px;
-  transition: border-color 0.15s;
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: 16px;
+  padding: 6px 6px 6px 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.chat-input-box:focus-within {
+.input-row:focus-within {
   border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
 }
-.chat-textarea {
+.chat-input {
   flex: 1;
   resize: none;
   border: none;
   background: transparent;
   font-size: 13px;
-  line-height: 1.5;
-  color: #1e293b;
+  line-height: 1.55;
+  color: var(--input-color);
   outline: none;
   max-height: 96px;
   overflow-y: auto;
-  padding: 4px 0;
+  padding: 3px 0;
+  font-family: inherit;
 }
-.chat-textarea::placeholder { color: #94a3b8; }
+.chat-input::placeholder { color: var(--footer-hint); }
+.footer-hint { color: var(--footer-hint); }
+
 .send-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 36px; height: 36px;
+  border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.15s, transform 0.15s;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+  transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
 }
-.send-btn:hover:not(:disabled) { opacity: 0.9; transform: scale(1.05); }
-.send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.send-btn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: scale(1.06);
+  box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+}
+.send-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
 
-/* Toggle button */
-.toggle-btn {
+/* ── FAB toggle ───────────────────────────────── */
+.fab-btn {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 58px; height: 58px;
   border-radius: 50%;
   border: none;
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  color: #ffffff;
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+  box-shadow: 0 8px 28px rgba(99,102,241,0.45);
   transition: transform 0.2s, box-shadow 0.2s;
 }
-.toggle-btn:hover { transform: scale(1.08); box-shadow: 0 12px 28px rgba(99,102,241,0.45); }
+.fab-btn:hover { transform: scale(1.09); box-shadow: 0 12px 32px rgba(99,102,241,0.5); }
+.fab-open { box-shadow: 0 4px 16px rgba(99,102,241,0.35); }
 
-/* Unread badge */
-.unread-dot {
+.unread-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 10px;
-  height: 10px;
+  top: 5px; right: 5px;
+  width: 12px; height: 12px;
   border-radius: 50%;
   background: #ef4444;
   border: 2px solid #fff;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 
-/* Animations */
-.chat-pop-enter-active { animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+/* ── Animations ───────────────────────────────── */
+.chat-pop-enter-active { animation: popIn 0.28s cubic-bezier(0.34,1.56,0.64,1); }
 .chat-pop-leave-active { animation: popOut 0.18s ease-in forwards; }
 @keyframes popIn {
-  from { opacity: 0; transform: translateY(16px) scale(0.94); }
+  from { opacity: 0; transform: translateY(20px) scale(0.92); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes popOut {
   from { opacity: 1; transform: translateY(0) scale(1); }
-  to   { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 0; transform: translateY(12px) scale(0.95); }
 }
-
 .icon-swap-enter-active, .icon-swap-leave-active { transition: opacity 0.15s, transform 0.15s; }
 .icon-swap-enter-from { opacity: 0; transform: rotate(-45deg) scale(0.7); }
-.icon-swap-leave-to  { opacity: 0; transform: rotate(45deg) scale(0.7); }
+.icon-swap-leave-to   { opacity: 0; transform: rotate(45deg) scale(0.7); }
 </style>

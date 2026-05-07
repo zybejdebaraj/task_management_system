@@ -87,8 +87,95 @@ exports.inviteMember = async (req, res) => {
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: email,
         subject: 'You have been invited to IdealTask',
-        html: `<p>You have been invited to join the team on <strong>IdealTask</strong>.</p><p><a href="${inviteUrl}" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Accept Invitation</a></p><p style="margin-top:12px;color:#64748b;font-size:13px;">This link expires in 7 days.</p>`,
-        text: `You have been invited to IdealTask. Set up your account here:\n\n${inviteUrl}\n\nThis link expires in 7 days.`,
+        html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>You're invited</title></head>
+<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+        <!-- Logo / Brand -->
+        <tr><td align="center" style="padding-bottom:24px;">
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:14px;width:48px;height:48px;text-align:center;vertical-align:middle;">
+                <span style="color:#fff;font-size:22px;font-weight:800;line-height:48px;">IT</span>
+              </td>
+              <td style="padding-left:12px;vertical-align:middle;">
+                <span style="font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-0.5px;">IdealTask</span>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <!-- Card -->
+        <tr><td style="background:#ffffff;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,0.08);overflow:hidden;">
+
+          <!-- Top accent bar -->
+          <tr><td style="background:linear-gradient(90deg,#4f46e5,#7c3aed);height:5px;"></td></tr>
+
+          <!-- Body -->
+          <tr><td style="padding:40px 40px 32px;">
+
+            <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#6366f1;letter-spacing:1px;text-transform:uppercase;">Team Invitation</p>
+            <h1 style="margin:0 0 16px;font-size:26px;font-weight:800;color:#1e293b;line-height:1.2;">You're invited to join<br/>the team 🎉</h1>
+            <p style="margin:0 0 28px;font-size:15px;color:#64748b;line-height:1.6;">
+              Someone has invited you to collaborate on <strong style="color:#1e293b;">IdealTask</strong> — a smart task management platform. Click the button below to set up your account and get started.
+            </p>
+
+            <!-- CTA Button -->
+            <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <tr>
+                <td style="background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:12px;">
+                  <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.2px;">
+                    Accept Invitation →
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Info box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:24px;">
+              <tr><td style="padding:16px 20px;">
+                <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#475569;">What happens next?</p>
+                <ul style="margin:8px 0 0;padding-left:18px;color:#64748b;font-size:13px;line-height:1.8;">
+                  <li>Click the button above to open the setup page</li>
+                  <li>Choose your name and a secure password</li>
+                  <li>You'll be logged in automatically</li>
+                </ul>
+              </td></tr>
+            </table>
+
+            <!-- Expiry notice -->
+            <p style="margin:0;font-size:12px;color:#94a3b8;text-align:center;">
+              ⏳ This invitation link expires in <strong>7 days</strong>. If it expires, ask your admin to resend it.
+            </p>
+
+          </td></tr>
+
+          <!-- Divider -->
+          <tr><td style="border-top:1px solid #f1f5f9;"></td></tr>
+
+          <!-- Footer -->
+          <tr><td style="padding:20px 40px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">Can't click the button? Copy this link into your browser:</p>
+            <p style="margin:0;font-size:11px;color:#94a3b8;word-break:break-all;">${inviteUrl}</p>
+          </td></tr>
+
+        </td></tr>
+
+        <!-- Bottom caption -->
+        <tr><td align="center" style="padding-top:24px;">
+          <p style="margin:0;font-size:12px;color:#94a3b8;">Sent by IdealTask · You received this because someone invited you.</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+        text: `You have been invited to join IdealTask.\n\nClick the link below to set up your account:\n${inviteUrl}\n\nThis link expires in 7 days.\n\nIf you did not expect this invitation, you can ignore this email.`,
       });
     }
 

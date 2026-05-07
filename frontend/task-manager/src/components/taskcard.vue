@@ -1,7 +1,7 @@
 <template>
   <div
-    class="bg-white rounded-xl border p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all relative"
-    :class="isOverdue ? 'border-red-300 bg-red-50/30' : 'border-slate-200'"
+    class="bg-white dark:bg-slate-800 rounded-xl border p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all relative"
+    :class="isOverdue ? 'border-red-300 bg-red-50/30 dark:border-red-700 dark:bg-red-900/10' : 'border-slate-200 dark:border-slate-700'"
   >
 
     <!-- Edit button (hidden for done tasks) -->
@@ -32,7 +32,7 @@
     </div>
 
     <!-- Subtasks -->
-    <div v-if="task.is_big" class="bg-slate-50 rounded-xl border border-slate-100 p-3 mb-3 space-y-2">
+    <div v-if="task.is_big" class="bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-700 p-3 mb-3 space-y-2">
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-bold text-slate-600">Checklist</span>
         <span class="text-xs text-slate-400">{{ doneSubtaskCount }}/{{ subtasks.length }}</span>
@@ -52,7 +52,7 @@
 
     <!-- Comments -->
     <div class="space-y-2 mb-3">
-      <div v-for="comment in comments" :key="comment.id" class="bg-slate-50 rounded-lg p-2.5 text-xs">
+      <div v-for="comment in comments" :key="comment.id" class="bg-slate-50 dark:bg-slate-900/60 rounded-lg p-2.5 text-xs border border-slate-100 dark:border-slate-700">
         <div class="flex items-start justify-between gap-1">
           <div>
             <span class="font-semibold text-slate-800">{{ comment.username || comment.email }}</span>
@@ -74,7 +74,7 @@
     </div>
 
     <!-- Actions -->
-    <div class="flex items-center gap-1.5 pt-2 border-t border-slate-100">
+    <div class="flex items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-700">
       <button class="action-btn" @click="$emit('details', task)" aria-label="Details" data-tip="Details">
         <Info class="w-3.5 h-3.5" />
       </button>
@@ -224,4 +224,20 @@ export default {
   transition: opacity 0.15s;
 }
 .action-btn:hover::after { opacity: 1; }
+
+:global(.dark) .action-btn {
+  background: #1e293b;
+  color: #94a3b8;
+}
+:global(.dark) .action-btn:hover {
+  background: #334155;
+  color: #f1f5f9;
+}
+:global(.dark) .action-btn.danger {
+  background: #450a0a;
+  color: #fca5a5;
+}
+:global(.dark) .action-btn.danger:hover {
+  background: #7f1d1d;
+}
 </style>

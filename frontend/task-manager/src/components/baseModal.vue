@@ -5,16 +5,16 @@
     @click.self="onBackdrop"
   >
     <div
-      class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200"
+      class="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700"
       role="dialog"
       aria-modal="true"
       :aria-label="title || 'Dialog'"
     >
       <!-- Header -->
-      <header class="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-        <strong class="text-sm font-bold text-slate-900">{{ title }}</strong>
+      <header class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-800">
+        <strong class="text-sm font-bold text-slate-900 dark:text-slate-100">{{ title }}</strong>
         <button
-          class="w-8 h-8 rounded-xl border-none bg-transparent text-slate-400 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center text-lg leading-none transition cursor-pointer"
+          class="w-8 h-8 rounded-xl border-none bg-transparent text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center text-lg leading-none transition cursor-pointer"
           type="button"
           aria-label="Close"
           @click="close"
@@ -22,12 +22,12 @@
       </header>
 
       <!-- Body -->
-      <section class="p-5 max-h-[70vh] overflow-auto">
+      <section class="p-5 max-h-[70vh] overflow-auto dark:bg-slate-800">
         <slot />
       </section>
 
       <!-- Footer -->
-      <footer v-if="$slots.footer" class="flex items-center justify-end gap-3 px-5 py-3 border-t border-slate-100 bg-slate-50">
+      <footer v-if="$slots.footer" class="flex items-center justify-end gap-3 px-5 py-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
         <slot name="footer" />
       </footer>
     </div>

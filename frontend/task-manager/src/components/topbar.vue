@@ -1,13 +1,13 @@
 <template>
-  <header class="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
-    <h2 class="text-lg font-bold text-slate-800">{{ pageTitle }}</h2>
+  <header class="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
+    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ pageTitle }}</h2>
 
     <div class="flex items-center gap-3">
       <!-- Notification bell -->
       <div class="relative" ref="notifyWrap">
         <button
           type="button"
-          class="relative w-9 h-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 transition"
+          class="relative w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition"
           @click="toggleNotifications"
           aria-label="Notifications"
         >
@@ -21,10 +21,10 @@
         <!-- Dropdown panel -->
         <div
           v-if="showNotifications"
-          class="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 overflow-hidden"
+          class="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-20 overflow-hidden"
         >
-          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-            <span class="font-bold text-sm text-slate-800">Notifications</span>
+          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+            <span class="font-bold text-sm text-slate-800 dark:text-slate-100">Notifications</span>
             <div class="flex gap-3">
               <button class="text-xs font-semibold text-indigo-600 hover:underline bg-transparent border-none cursor-pointer" @click="loadNotifications">Refresh</button>
               <button class="text-xs font-semibold text-indigo-600 hover:underline bg-transparent border-none cursor-pointer" @click="markAllAsRead">Mark all read</button>
@@ -32,15 +32,15 @@
           </div>
           <p v-if="loading" class="px-4 py-3 text-sm text-slate-400">Loading...</p>
           <p v-else-if="!notifications.length" class="px-4 py-3 text-sm text-slate-400">No notifications yet.</p>
-          <ul v-else class="max-h-72 overflow-auto divide-y divide-slate-50">
+          <ul v-else class="max-h-72 overflow-auto divide-y divide-slate-100 dark:divide-slate-700">
             <li
               v-for="item in notifications"
               :key="item.id"
-              class="px-4 py-3 cursor-pointer hover:bg-slate-50 transition"
-              :class="{ 'bg-indigo-50': !item.is_read }"
+              class="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+              :class="item.is_read ? '' : 'bg-indigo-50 dark:bg-indigo-900/20'"
               @click="openNotification(item)"
             >
-              <p class="text-sm text-slate-700">{{ item.message }}</p>
+              <p class="text-sm text-slate-700 dark:text-slate-200">{{ item.message }}</p>
               <small class="text-xs text-slate-400">{{ formatDate(item.created_at) }}</small>
             </li>
           </ul>

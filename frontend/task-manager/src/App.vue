@@ -37,9 +37,20 @@ export default {
     }
   },
   mounted() {
-    if (localStorage.getItem('dark_mode') === 'true') {
-      document.documentElement.classList.add('dark');
+    const saved = localStorage.getItem('dark_mode');
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+    if (saved !== null) {
+      document.documentElement.classList.toggle('dark', saved === 'true');
+    } else {
+      document.documentElement.classList.toggle('dark', systemDark.matches);
     }
+
+    systemDark.addEventListener('change', (e) => {
+      if (localStorage.getItem('dark_mode') === null) {
+        document.documentElement.classList.toggle('dark', e.matches);
+      }
+    });
   }
 };
 </script>
