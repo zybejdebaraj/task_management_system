@@ -6,6 +6,7 @@
       <div v-if="user?.role !== 'admin'" class="bg-indigo-50 border border-indigo-100 text-indigo-700 text-sm rounded-xl px-4 py-2 font-medium">
         You can view tasks from projects you joined. Admins manage task creation.
       </div>
+
       <button
         class="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-sm transition border-none cursor-pointer flex items-center gap-2"
         type="button"

@@ -37,6 +37,22 @@ exports.createComment = async (req, res) => {
       [taskId, req.user.id, content.trim()]
     );
 
+    // Parse @mentions and notify mentioned users
+    const mentions = [...content.matchAll(/@(\w+)/g)].map(m => m[1]);
+    if (mentions.length) {
+      const mentionedUsers = await pool.query(
+        `SELECT id, username FROM users WHERE username = ANY($1::text[]) AND id <> $2`,
+        [mentions, req.user.id]
+      );
+      const actor = req.user.username || req.user.email || 'Someone';
+      for (const user of mentionedUsers.rows) {
+        await pool.query(
+          `INSERT INTO notifications (user_id, task_id, message) VALUES ($1, $2, $3)`,
+          [user.id, taskId, `${actor} mentioned you in a comment.`]
+        );
+      }
+    }
+
     res.status(201).json(comment.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });

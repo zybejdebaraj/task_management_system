@@ -1,4 +1,25 @@
 const pool = require('../config/db');
+const nodemailer = require('nodemailer');
+
+const sendAssignmentEmail = async (toEmail, taskTitle, dueDate) => {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+  try {
+    const transporter = nodemailer.createTransport(
+      process.env.SMTP_HOST
+        ? { host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === 'true', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } }
+        : { service: process.env.SMTP_SERVICE, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } }
+    );
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: toEmail,
+      subject: `New task assigned: ${taskTitle}`,
+      html: `<p>You have been assigned a new task: <strong>${taskTitle}</strong>${dueDate ? ` due <strong>${new Date(dueDate).toLocaleString()}</strong>` : ''}.</p><p>Log in to IdealTask to view details.</p>`,
+      text: `You have been assigned: ${taskTitle}${dueDate ? ` (due ${new Date(dueDate).toLocaleString()})` : ''}.`,
+    });
+  } catch (err) {
+    console.error('Assignment email failed:', err.message);
+  }
+};
 
 const createNotification = async (userId, taskId, message) => {
   await pool.query(
@@ -20,20 +41,15 @@ const logTaskActivity = async (taskId, actorUserId, action, detail) => {
 exports.getTasks = async (req, res) => {
   try {
     let tasks;
+    const selectFields = `t.*, p.name AS project_name, u.email AS assignee_email, u.username AS assignee_username,
+      COALESCE(t.labels, '[]'::jsonb) AS labels,
+      COALESCE(json_agg(
+        json_build_object('id',ta.id,'file_name',ta.file_name,'original_name',ta.original_name,'mime_type',ta.mime_type,'size',ta.size,'url',ta.url)
+      ) FILTER (WHERE ta.id IS NOT NULL), '[]') AS attachments`;
+
     if (req.user.role === 'admin') {
       tasks = await pool.query(
-        `SELECT t.*, p.name AS project_name, u.email AS assignee_email, u.username AS assignee_username,
-                COALESCE(json_agg(
-                  json_build_object(
-                    'id', ta.id,
-                    'file_name', ta.file_name,
-                    'original_name', ta.original_name,
-                    'mime_type', ta.mime_type,
-                    'size', ta.size,
-                    'url', ta.url
-                  )
-                ) FILTER (WHERE ta.id IS NOT NULL), '[]') AS attachments
-         FROM tasks t
+        `SELECT ${selectFields} FROM tasks t
          LEFT JOIN projects p ON p.id = t.project_id
          LEFT JOIN users u ON u.id = t.user_id
          LEFT JOIN task_attachments ta ON ta.task_id = t.id
@@ -44,18 +60,7 @@ exports.getTasks = async (req, res) => {
       );
     } else {
       tasks = await pool.query(
-        `SELECT t.*, p.name AS project_name, u.email AS assignee_email, u.username AS assignee_username,
-                COALESCE(json_agg(
-                  json_build_object(
-                    'id', ta.id,
-                    'file_name', ta.file_name,
-                    'original_name', ta.original_name,
-                    'mime_type', ta.mime_type,
-                    'size', ta.size,
-                    'url', ta.url
-                  )
-                ) FILTER (WHERE ta.id IS NOT NULL), '[]') AS attachments
-         FROM tasks t
+        `SELECT ${selectFields} FROM tasks t
          LEFT JOIN projects p ON p.id = t.project_id
          LEFT JOIN users u ON u.id = t.user_id
          LEFT JOIN task_attachments ta ON ta.task_id = t.id
@@ -74,7 +79,7 @@ exports.getTasks = async (req, res) => {
 
 // Create task
 exports.createTask = async (req, res) => {
-  const { title, description, project_id, user_id, due_date, priority, is_big } = req.body;
+  const { title, description, project_id, user_id, due_date, priority, is_big, labels } = req.body;
 
   if (!title || title.trim() === '') {
     return res.status(400).json({ message: 'Title is required' });
@@ -111,9 +116,12 @@ exports.createTask = async (req, res) => {
       return res.status(400).json({ message: 'Assignee must be a member of the selected project' });
     }
 
+    let parsedLabels = [];
+    try { parsedLabels = labels ? JSON.parse(labels) : []; } catch { parsedLabels = []; }
+
     const task = await pool.query(
-      `INSERT INTO tasks (title, description, status, project_id, created_by, user_id, completed_at, due_date, priority, is_big)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO tasks (title, description, status, project_id, created_by, user_id, completed_at, due_date, priority, is_big, labels)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         title.trim(),
@@ -126,6 +134,7 @@ exports.createTask = async (req, res) => {
         due_date || null,
         priority || 'medium',
         is_big === true || is_big === 'true',
+        JSON.stringify(parsedLabels),
       ]
     );
 
@@ -159,6 +168,10 @@ exports.createTask = async (req, res) => {
 
     const assignmentMessage = `You have been assigned a new task: "${title.trim()}"${due_date ? ` due ${new Date(due_date).toLocaleString()}` : ''}.`;
     await createNotification(assigneeId, createdTask.id, assignmentMessage);
+    const assigneeUser = await pool.query('SELECT email FROM users WHERE id = $1', [assigneeId]);
+    if (assigneeUser.rows.length) {
+      sendAssignmentEmail(assigneeUser.rows[0].email, title.trim(), due_date).catch(() => {});
+    }
     await logTaskActivity(
       createdTask.id,
       req.user.id,
@@ -202,7 +215,7 @@ exports.deleteTask = async (req, res) => {
 //update task
 exports.updateTask = async (req, res) => {
   const { id } = req.params;
-  const { title, description, status, project_id, user_id, due_date, priority, is_big } = req.body;
+  const { title, description, status, project_id, user_id, due_date, priority, is_big, labels } = req.body;
 
   try {
     const existingTask = await pool.query(
@@ -278,17 +291,26 @@ exports.updateTask = async (req, res) => {
     }
 
     const trimmedFinalTitle = finalTitle ? finalTitle.trim() : existing.title;
+    let parsedLabels = existing.labels;
+    if (labels !== undefined) {
+      try { parsedLabels = typeof labels === 'string' ? JSON.parse(labels) : labels; } catch { parsedLabels = []; }
+    }
+
     const updated = await pool.query(
       `UPDATE tasks
-       SET title = $1, description = $2, status = $3, project_id = $4, completed_at = $5, user_id = $6, due_date = $7, priority = $8, is_big = $9
-       WHERE id = $10
+       SET title = $1, description = $2, status = $3, project_id = $4, completed_at = $5, user_id = $6, due_date = $7, priority = $8, is_big = $9, labels = $10
+       WHERE id = $11
        RETURNING *`,
-      [trimmedFinalTitle, finalDescription, finalStatus, finalProjectId, completedAt, finalAssigneeId, finalDueDate, finalPriority, finalIsBig, id]
+      [trimmedFinalTitle, finalDescription, finalStatus, finalProjectId, completedAt, finalAssigneeId, finalDueDate, finalPriority, finalIsBig, JSON.stringify(parsedLabels || []), id]
     );
 
     if (finalAssigneeId && Number(finalAssigneeId) !== Number(existing.user_id)) {
       const reassignedMessage = `You have been assigned a task: "${trimmedFinalTitle}"${finalDueDate ? ` due ${new Date(finalDueDate).toLocaleString()}` : ''}.`;
       await createNotification(finalAssigneeId, id, reassignedMessage);
+      const assigneeUser = await pool.query('SELECT email FROM users WHERE id = $1', [finalAssigneeId]);
+      if (assigneeUser.rows.length) {
+        sendAssignmentEmail(assigneeUser.rows[0].email, trimmedFinalTitle, finalDueDate).catch(() => {});
+      }
     }
 
     // Notify only the project-owning admin when a member completes a task.
@@ -414,6 +436,73 @@ exports.getTaskActivity = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+
+exports.bulkDelete = async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ message: 'No task IDs provided' });
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Only admin can bulk delete' });
+  try {
+    await pool.query(
+      `DELETE FROM tasks WHERE id = ANY($1::int[])
+       AND project_id IN (SELECT id FROM projects WHERE created_by = $2)`,
+      [ids, req.user.id]
+    );
+    res.json({ message: `${ids.length} tasks deleted` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.bulkUpdateStatus = async (req, res) => {
+  const { ids, status } = req.body;
+  if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ message: 'No task IDs provided' });
+  if (!['todo', 'in-progress', 'done'].includes(status)) return res.status(400).json({ message: 'Invalid status' });
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Only admin can bulk update' });
+  try {
+    const completedAt = status === 'done' ? new Date() : null;
+    await pool.query(
+      `UPDATE tasks SET status = $1, completed_at = $2
+       WHERE id = ANY($3::int[])
+       AND project_id IN (SELECT id FROM projects WHERE created_by = $4)
+       AND status <> 'done'`,
+      [status, completedAt, ids, req.user.id]
+    );
+    res.json({ message: `${ids.length} tasks updated` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getTemplates = async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM task_templates WHERE created_by = $1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+exports.createTemplate = async (req, res) => {
+  const { name, title, description, priority, is_big } = req.body;
+  if (!name || !title) return res.status(400).json({ message: 'Name and title are required' });
+  try {
+    const result = await pool.query(
+      `INSERT INTO task_templates (name, title, description, priority, is_big, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [name, title, description || null, priority || 'medium', !!is_big, req.user.id]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+exports.deleteTemplate = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM task_templates WHERE id = $1 AND created_by = $2', [id, req.user.id]);
+    res.json({ message: 'Template deleted' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
 exports.sendDueReminders = async () => {

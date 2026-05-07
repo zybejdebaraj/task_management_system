@@ -5,13 +5,9 @@ const router = express.Router();
 
 const auth = require('../middleware/auth');
 const {
-  getTasks,
-  createTask,
-  deleteTask,
-  updateTask,
-  duplicateTask,
-  getTaskActivity,
-  getAllActivity,
+  getTasks, createTask, deleteTask, updateTask, duplicateTask,
+  getTaskActivity, getAllActivity,
+  getTemplates, createTemplate, deleteTemplate,
 } = require('../controllers/taskController');
 
 const upload = multer({ dest: path.join(__dirname, '../uploads') });
@@ -19,6 +15,9 @@ const upload = multer({ dest: path.join(__dirname, '../uploads') });
 router.get('/', auth, getTasks);
 router.post('/', auth, upload.array('attachments', 5), createTask);
 router.get('/activity/all', auth, getAllActivity);
+router.get('/templates', auth, getTemplates);
+router.post('/templates', auth, createTemplate);
+router.delete('/templates/:id', auth, deleteTemplate);
 router.get('/:id/activity', auth, getTaskActivity);
 router.delete('/:id', auth, deleteTask);
 router.put('/:id', auth, updateTask);

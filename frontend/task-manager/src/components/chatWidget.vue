@@ -88,7 +88,7 @@
               v-model="draft"
               rows="1"
               placeholder="Message Task Assistant…"
-              class="chat-input"
+              class="chat-input outline-none ring-0 border-none shadow-none"
               @keydown.enter.exact.prevent="send"
               @input="autoResize"
             />
@@ -396,6 +396,7 @@ export default {
   font-family: inherit;
 }
 .chat-input::placeholder { color: var(--footer-hint); }
+.chat-input:focus { outline: none !important; box-shadow: none !important; border: none !important; }
 .footer-hint { color: var(--footer-hint); }
 
 .send-btn {

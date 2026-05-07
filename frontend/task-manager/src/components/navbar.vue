@@ -43,10 +43,11 @@
     <!-- User footer -->
     <div :class="['flex items-center rounded-xl bg-white/10 border border-white/10', collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-3']">
       <div
-        class="w-8 h-8 rounded-full bg-white/20 border border-white/25 grid place-items-center text-xs font-bold shrink-0"
+        class="w-8 h-8 rounded-full bg-white/20 border border-white/25 overflow-hidden grid place-items-center text-xs font-bold shrink-0"
         :title="collapsed ? displayName : ''"
       >
-        {{ userInitials }}
+        <img v-if="avatarUrl" :src="avatarUrl" class="w-full h-full object-cover" alt="avatar" />
+        <span v-else>{{ userInitials }}</span>
       </div>
       <template v-if="!collapsed">
         <div class="min-w-0 flex-1">
@@ -78,7 +79,7 @@ export default {
   },
   emits: ['toggle-collapse'],
   data() {
-    return { isAdminUser: false, user: null };
+    return { isAdminUser: false, user: null, avatarUrl: null };
   },
   computed: {
     displayName() {
@@ -101,9 +102,17 @@ export default {
       return all.filter(l => !l.adminOnly || this.isAdminUser);
     }
   },
-  mounted() {
+  async mounted() {
     this.isAdminUser = isAdmin();
     this.user = getUser();
+    try {
+      const { default: api } = await import('@/api/api');
+      const res = await api.get('/auth/me');
+      if (res.data.avatar_url) {
+        const base = import.meta.env.VITE_API_URL || '';
+        this.avatarUrl = res.data.avatar_url.startsWith('http') ? res.data.avatar_url : `${base}${res.data.avatar_url}`;
+      }
+    } catch { /* silent */ }
   },
   methods: {
     logout() {

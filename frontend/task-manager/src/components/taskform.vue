@@ -1,5 +1,14 @@
 <template>
   <div class="space-y-4">
+
+    <!-- Template picker -->
+    <div v-if="!editingTask && templates.length" class="flex items-center gap-2">
+      <select v-model="selectedTemplate" @change="applyTemplate" class="flex-1 block rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+        <option value="">Load a template...</option>
+        <option v-for="t in templates" :key="t.id" :value="t.id">{{ t.name }}</option>
+      </select>
+    </div>
+
     <div class="grid gap-4">
       <div>
         <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Title</label>
@@ -64,11 +73,14 @@
 
     <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
 
-    <div class="flex gap-3 justify-end pt-2">
-      <button v-if="editingTask" type="button" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition border-none cursor-pointer" @click="cancelEdit">Cancel</button>
-      <button type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition border-none cursor-pointer" @click="createTask">
-        {{ editingTask ? 'Update' : 'Add task' }}
-      </button>
+    <div class="flex gap-3 justify-between pt-2">
+      <button v-if="!editingTask && isAdminUser" type="button" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs border-none cursor-pointer" @click="saveAsTemplate">Save as template</button>
+      <div class="flex gap-3 ml-auto">
+        <button v-if="editingTask" type="button" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition border-none cursor-pointer" @click="cancelEdit">Cancel</button>
+        <button type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition border-none cursor-pointer" @click="createTask">
+          {{ editingTask ? 'Update' : 'Add task' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -81,7 +93,12 @@ import { toast } from '@/utils/toast';
 export default {
   props: ['editingTask', 'projects'],
   data() {
-    return { title: '', projectId: '', assigneeId: '', users: [], projectMembers: [], status: 'todo', priority: 'medium', dueDate: '', description: '', isBig: false, attachments: [], error: '', user: null };
+    return {
+      title: '', projectId: '', assigneeId: '', users: [], projectMembers: [],
+      status: 'todo', priority: 'medium', dueDate: '', description: '', isBig: false,
+      attachments: [], error: '', user: null,
+      templates: [], selectedTemplate: '',
+    };
   },
   computed: {
     isAdminUser() { return this.user?.role === 'admin'; },
@@ -98,6 +115,7 @@ export default {
   mounted() {
     this.user = getUser();
     if (!this.isAdminUser && this.user?.id) this.assigneeId = this.user.id;
+    if (this.isAdminUser) this.loadTemplates();
   },
   watch: {
     editingTask: {
@@ -122,16 +140,36 @@ export default {
     }
   },
   methods: {
+    async loadTemplates() {
+      try { const res = await api.get('/tasks/templates'); this.templates = res.data; }
+      catch { /* silent */ }
+    },
+    applyTemplate() {
+      const t = this.templates.find(t => t.id === Number(this.selectedTemplate));
+      if (!t) return;
+      this.title = t.title;
+      this.description = t.description || '';
+      this.priority = t.priority;
+      this.isBig = t.is_big;
+    },
+    async saveAsTemplate() {
+      if (!this.title.trim()) { toast.error('Add a title first'); return; }
+      const name = prompt('Template name:');
+      if (!name) return;
+      try {
+        await api.post('/tasks/templates', { name, title: this.title, description: this.description, priority: this.priority, is_big: this.isBig });
+        toast.success('Template saved');
+        await this.loadTemplates();
+      } catch { toast.error('Failed to save template'); }
+    },
     async refreshAssigneeData() {
       this.users = []; this.projectMembers = [];
       if (!this.projectId) return;
       try {
         const [usersResult, membersResult] = await Promise.allSettled([api.get('/auth/users'), api.get(`/projects/${this.projectId}/members`)]);
         if (usersResult.status === 'fulfilled') this.users = usersResult.value.data || [];
-        else { console.error(usersResult.reason); this.error = 'Failed to load users.'; }
         if (membersResult.status === 'fulfilled') this.projectMembers = membersResult.value.data || [];
-        else { console.error(membersResult.reason); this.error = 'Failed to load project members.'; }
-      } catch (err) { console.error(err); this.error = 'Failed to load assignee data'; }
+      } catch (err) { this.error = 'Failed to load assignee data'; }
     },
     async createTask() {
       if (!this.title.trim()) { this.error = 'Title is required'; return; }
@@ -149,7 +187,12 @@ export default {
           toast.success('Task updated'); this.$emit('taskUpdated');
         } else {
           const formData = new FormData();
-          formData.append('title', this.title); formData.append('description', this.description || ''); formData.append('project_id', this.projectId); formData.append('user_id', this.assigneeId); formData.append('priority', this.priority); formData.append('is_big', this.isBig);
+          formData.append('title', this.title);
+          formData.append('description', this.description || '');
+          formData.append('project_id', this.projectId);
+          formData.append('user_id', this.assigneeId);
+          formData.append('priority', this.priority);
+          formData.append('is_big', this.isBig);
           if (this.dueDate) formData.append('due_date', this.dueDate);
           this.attachments.forEach(file => formData.append('attachments', file));
           await api.post('/tasks', formData);
@@ -161,8 +204,10 @@ export default {
     cancelEdit() { this.resetForm(); this.$emit('cancelEdit'); },
     handleAttachments(event) { this.attachments = Array.from(event.target.files).slice(0, 5); },
     resetForm() {
-      this.title = ''; this.status = 'todo'; this.priority = 'medium'; this.description = ''; this.isBig = false; this.dueDate = ''; this.attachments = [];
-      this.projectId = ''; this.assigneeId = this.isAdminUser ? '' : (this.user?.id || ''); this.users = []; this.projectMembers = []; this.error = '';
+      this.title = ''; this.status = 'todo'; this.priority = 'medium'; this.description = '';
+      this.isBig = false; this.dueDate = ''; this.attachments = [];
+      this.projectId = ''; this.assigneeId = this.isAdminUser ? '' : (this.user?.id || '');
+      this.users = []; this.projectMembers = []; this.error = ''; this.selectedTemplate = '';
     }
   }
 };

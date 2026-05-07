@@ -4,6 +4,20 @@
     <!-- Profile -->
     <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
       <h3 class="font-bold text-slate-800 text-xl">Profile</h3>
+
+      <!-- Avatar -->
+      <div class="flex items-center gap-5">
+        <div class="w-16 h-16 rounded-full bg-indigo-100 border-2 border-indigo-200 overflow-hidden flex items-center justify-center shrink-0">
+          <img v-if="avatarPreview || profile.avatar_url" :src="avatarPreview || fullAvatarUrl" class="w-full h-full object-cover" alt="Avatar" />
+          <span v-else class="text-xl font-bold text-indigo-600">{{ profile.username?.charAt(0)?.toUpperCase() || '?' }}</span>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-slate-700 mb-1">Profile picture</p>
+          <input type="file" accept="image/*" @change="handleAvatarFile" class="block text-sm text-slate-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-600 file:font-semibold hover:file:bg-indigo-100 cursor-pointer" />
+          <button v-if="avatarFile" class="mt-2 px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm border-none cursor-pointer transition" @click="uploadAvatar">Upload</button>
+        </div>
+      </div>
+
       <div class="grid sm:grid-cols-2 gap-5">
         <div>
           <label class="block text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Username</label>
@@ -225,10 +239,18 @@ export default {
       auditPage: 1,
       auditPageSize: 5,
       message: '',
-      error: ''
+      error: '',
+      usingSystemTheme: localStorage.getItem('dark_mode') === null,
+      avatarFile: null,
+      avatarPreview: null,
     };
   },
   computed: {
+    fullAvatarUrl() {
+      if (!this.profile.avatar_url) return null;
+      if (this.profile.avatar_url.startsWith('http')) return this.profile.avatar_url;
+      return `${import.meta.env.VITE_API_URL}${this.profile.avatar_url}`;
+    },
     filteredAuditRows() {
       const q = this.auditSearch.trim().toLowerCase();
       if (!q) return this.auditRows;
@@ -291,10 +313,26 @@ export default {
       if (a.includes('updat') || a.includes('edit') || a.includes('mov')) return '✎';
       return '•';
     },
+    handleAvatarFile(e) {
+      this.avatarFile = e.target.files[0] || null;
+      if (this.avatarFile) this.avatarPreview = URL.createObjectURL(this.avatarFile);
+    },
+    async uploadAvatar() {
+      if (!this.avatarFile) return;
+      const form = new FormData();
+      form.append('avatar', this.avatarFile);
+      try {
+        const res = await api.post('/auth/me/avatar', form);
+        this.profile.avatar_url = res.data.avatar_url;
+        this.avatarFile = null;
+        toast.success('Avatar updated');
+      } catch { toast.error('Failed to upload avatar'); }
+    },
     async loadSettings() {
       try {
         const res = await api.get('/auth/me');
         this.profile.username = res.data.username || '';
+        this.profile.avatar_url = res.data.avatar_url || null;
         this.profile.email = res.data.email || '';
         this.preferences.notifications_enabled = !!res.data.notifications_enabled;
         this.preferences.dark_mode = !!res.data.dark_mode;

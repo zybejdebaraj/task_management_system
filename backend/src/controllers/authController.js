@@ -486,7 +486,7 @@ exports.getMySettings = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, username, email, role, notifications_enabled, dark_mode, timezone, language,
-              smtp_service, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_from,
+              avatar_url, smtp_service, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_from,
               (smtp_pass IS NOT NULL AND smtp_pass <> '') AS has_smtp_pass
        FROM users
        WHERE id = $1`,
@@ -573,6 +573,17 @@ exports.updateMyPreferences = async (req, res) => {
     );
 
     res.json(updated.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.uploadAvatar = async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  try {
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    await pool.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, req.user.id]);
+    res.json({ avatar_url: avatarUrl });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
