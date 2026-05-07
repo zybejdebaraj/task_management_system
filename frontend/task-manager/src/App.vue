@@ -32,8 +32,13 @@ export default {
   },
   computed: {
     showNavbar() {
-      const hiddenRoutes = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
+      const hiddenRoutes = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/accept-invite'];
       return !hiddenRoutes.includes(this.$route.path);
+    }
+  },
+  mounted() {
+    if (localStorage.getItem('dark_mode') === 'true') {
+      document.documentElement.classList.add('dark');
     }
   }
 };

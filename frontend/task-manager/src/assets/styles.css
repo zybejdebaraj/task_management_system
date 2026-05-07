@@ -9,6 +9,61 @@
   body {
     @apply bg-slate-50 text-slate-900 min-h-screen;
   }
+  html.dark body {
+    @apply bg-slate-900 text-slate-100;
+  }
+}
+
+/* Dark mode overrides — applied when <html class="dark"> */
+.dark .bg-white {
+  background-color: #1e293b !important; /* slate-800 */
+}
+.dark .bg-slate-50 {
+  background-color: #0f172a !important; /* slate-900 */
+}
+.dark .border-slate-200,
+.dark .border-slate-100 {
+  border-color: #334155 !important; /* slate-700 */
+}
+.dark .divide-slate-50 > * + * {
+  border-color: #1e293b !important;
+}
+.dark .text-slate-900,
+.dark .text-slate-800 {
+  color: #f1f5f9 !important; /* slate-100 */
+}
+.dark .text-slate-700 {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+.dark .text-slate-600 {
+  color: #94a3b8 !important; /* slate-400 */
+}
+.dark .text-slate-500 {
+  color: #94a3b8 !important; /* slate-400 */
+}
+.dark header.bg-white {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.4) !important;
+}
+.dark input:not([type=checkbox]):not([type=radio]),
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important; /* slate-600 */
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important; /* slate-500 */
+}
+.dark tr:hover {
+  background-color: #1e293b !important;
+}
+.dark thead tr {
+  background-color: #0f172a !important;
 }
 
 @layer components {

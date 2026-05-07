@@ -13,6 +13,7 @@ import MembersPage from '../views/members.vue';
 import AuditLogPage from '../views/auditLog.vue';
 import ForgotPasswordPage from '../views/forgotPassword.vue';
 import ResetPasswordPage from '../views/resetPassword.vue';
+import AcceptInvitePage from '../views/acceptInvite.vue';
 
 const isAuthenticated = () => {
   return !!getUser();
@@ -38,6 +39,14 @@ const routes = [
   { path: '/register', component: register },
   { path: '/forgot-password', component: ForgotPasswordPage },
   { path: '/reset-password', component: ResetPasswordPage },
+  {
+    path: '/accept-invite',
+    component: AcceptInvitePage,
+    beforeEnter: (to) => {
+      if (!to.query.token) return '/login';
+      return true;
+    }
+  },
 
   {
     path: '/dashboard',
@@ -113,6 +122,10 @@ const routes = [
       if (!isAdminUser()) return '/dashboard';
       return true;
     }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    beforeEnter: () => isAuthenticated() ? '/dashboard' : '/login'
   }
 ];
 

@@ -248,7 +248,8 @@ export default {
     }
   },
   watch: {
-    auditSearch() { this.auditPage = 1; }
+    auditSearch() { this.auditPage = 1; },
+    'preferences.dark_mode'(val) { this.applyTheme(val); }
   },
   async mounted() {
     this.isAdmin = isAdmin();
@@ -306,7 +307,10 @@ export default {
         this.mailbox.has_smtp_pass = !!res.data.has_smtp_pass;
       } catch (err) { toast.error(err.response?.data?.message || 'Failed to load settings'); }
     },
-    applyTheme(isDark) { document.body.classList.toggle('dark-mode', isDark); },
+    applyTheme(isDark) {
+      document.documentElement.classList.toggle('dark', isDark);
+      localStorage.setItem('dark_mode', isDark ? 'true' : 'false');
+    },
     clearMessages() { this.error = ''; this.message = ''; },
     async saveProfile() {
       this.clearMessages();

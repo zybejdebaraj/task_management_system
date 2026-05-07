@@ -9,9 +9,14 @@
       <!-- Panel header -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
         <h3 class="font-bold text-slate-800">Team members</h3>
-        <button class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition border-none cursor-pointer" type="button" @click="openAddModal">
-          + Add member
-        </button>
+        <div class="flex items-center gap-2">
+          <button class="px-4 py-2 rounded-xl bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-600 font-semibold text-sm transition border-none cursor-pointer flex items-center gap-1.5" type="button" @click="openInviteModal">
+            <Mail class="w-4 h-4" /> Invite via email
+          </button>
+          <button class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition border-none cursor-pointer" type="button" @click="openAddModal">
+            + Add member
+          </button>
+        </div>
       </div>
 
       <p v-if="message" class="mx-5 mt-3 text-sm text-green-700 font-medium">{{ message }}</p>
@@ -82,6 +87,21 @@
       @confirm="runDelete"
     />
 
+    <!-- Invite modal -->
+    <BaseModal v-model="showInviteModal" title="Invite member by email">
+      <div class="space-y-3">
+        <p class="text-sm text-slate-500">An email with a sign-up link will be sent. The link expires in 7 days.</p>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Email address</label>
+          <input v-model="inviteEmail" type="email" placeholder="colleague@example.com" class="block w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @keyup.enter="sendInvite" />
+        </div>
+      </div>
+      <template #footer>
+        <button class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition border-none cursor-pointer" type="button" @click="showInviteModal = false">Cancel</button>
+        <button class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition border-none cursor-pointer" type="button" :disabled="inviteSending" @click="sendInvite">{{ inviteSending ? 'Sending...' : 'Send invite' }}</button>
+      </template>
+    </BaseModal>
+
     <!-- Member modal -->
     <BaseModal v-model="showMemberModal" :title="editingMemberId ? 'Update member' : 'Add member'">
       <div class="grid sm:grid-cols-2 gap-4">
@@ -111,14 +131,19 @@
 import api from '../api/api';
 import { isAdmin } from '@/utils/auth';
 import { toast } from '@/utils/toast';
-import { Pencil, Trash2 } from 'lucide-vue-next';
+import { Pencil, Trash2, Mail } from 'lucide-vue-next';
 import BaseModal from '@/components/baseModal.vue';
 import ConfirmModal from '@/components/confirmModal.vue';
 
 export default {
-  components: { Pencil, Trash2, BaseModal, ConfirmModal },
+  components: { Pencil, Trash2, Mail, BaseModal, ConfirmModal },
   data() {
-    return { username: '', email: '', password: '', users: [], error: '', message: '', isAdminUser: false, editingMemberId: null, showMemberModal: false, showConfirm: false, confirmTarget: null, memberPage: 1, memberPageSize: 5 };
+    return {
+      username: '', email: '', password: '', users: [], error: '', message: '',
+      isAdminUser: false, editingMemberId: null, showMemberModal: false,
+      showConfirm: false, confirmTarget: null, memberPage: 1, memberPageSize: 5,
+      showInviteModal: false, inviteEmail: '', inviteSending: false,
+    };
   },
   computed: {
     totalMemberPages() { return Math.max(1, Math.ceil(this.users.length / this.memberPageSize)); },
@@ -158,6 +183,21 @@ export default {
     },
     submitMember() { if (this.editingMemberId) return this.updateMember(); return this.createMember(); },
     openAddModal() { this.editingMemberId = null; this.username = ''; this.email = ''; this.password = ''; this.showMemberModal = true; },
+    openInviteModal() { this.inviteEmail = ''; this.showInviteModal = true; },
+    async sendInvite() {
+      if (!this.inviteEmail) { toast.error('Email is required'); return; }
+      this.inviteSending = true;
+      try {
+        await api.post('/auth/invite', { email: this.inviteEmail });
+        toast.success('Invitation sent');
+        this.showInviteModal = false;
+        await this.fetchUsers();
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to send invite');
+      } finally {
+        this.inviteSending = false;
+      }
+    },
     startEdit(user) { this.editingMemberId = user.id; this.username = user.username || ''; this.email = user.email; this.password = ''; this.showMemberModal = true; },
     closeMemberModal() { this.showMemberModal = false; this.cancelEdit(); },
     cancelEdit() { this.editingMemberId = null; this.username = ''; this.email = ''; this.password = ''; },

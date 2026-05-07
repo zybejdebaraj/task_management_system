@@ -5,6 +5,8 @@ const {
   register,
   login,
   googleAuth,
+  inviteMember,
+  acceptInvite,
   getUsers,
   getMembers,
   adminDeleteMember,
@@ -24,6 +26,8 @@ const isAdmin = require('../middleware/role');
 router.post('/register', register);
 router.post('/login', login);
 router.post('/google', googleAuth);
+router.post('/accept-invite', acceptInvite);
+router.post('/invite', auth, isAdmin, inviteMember);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.get('/users', auth, isAdmin, getUsers);

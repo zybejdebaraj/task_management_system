@@ -47,6 +47,92 @@ exports.googleAuth = async (req, res) => {
   }
 };
 
+exports.inviteMember = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required' });
+
+  try {
+    const existing = await pool.query('SELECT id, password FROM users WHERE email = $1', [email]);
+    if (existing.rows.length && existing.rows[0].password) {
+      return res.status(400).json({ message: 'A user with this email already has an account' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    if (existing.rows.length) {
+      await pool.query(
+        'UPDATE users SET invite_token = $1, invite_expires = $2 WHERE id = $3',
+        [token, expires, existing.rows[0].id]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO users (email, role, invite_token, invite_expires)
+         VALUES ($1, 'member', $2, $3)`,
+        [email, token, expires]
+      );
+    }
+
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const inviteUrl = `${frontendUrl}/accept-invite?token=${token}`;
+
+    const smtpConfigured = process.env.SMTP_USER && process.env.SMTP_PASS;
+    if (smtpConfigured) {
+      const transporter = nodemailer.createTransport(
+        process.env.SMTP_HOST
+          ? { host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === 'true', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } }
+          : { service: process.env.SMTP_SERVICE, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } }
+      );
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: email,
+        subject: 'You have been invited to IdealTask',
+        html: `<p>You have been invited to join the team on <strong>IdealTask</strong>.</p><p><a href="${inviteUrl}" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Accept Invitation</a></p><p style="margin-top:12px;color:#64748b;font-size:13px;">This link expires in 7 days.</p>`,
+        text: `You have been invited to IdealTask. Set up your account here:\n\n${inviteUrl}\n\nThis link expires in 7 days.`,
+      });
+    }
+
+    res.json({ message: smtpConfigured ? 'Invitation sent via email' : 'Invitation created', invite_url: inviteUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.acceptInvite = async (req, res) => {
+  const { token, username, password } = req.body;
+  if (!token || !password) return res.status(400).json({ message: 'Token and password are required' });
+
+  try {
+    const user = await pool.query(
+      'SELECT id, email FROM users WHERE invite_token = $1 AND invite_expires > NOW()',
+      [token]
+    );
+    if (!user.rows.length) {
+      return res.status(400).json({ message: 'Invalid or expired invite link' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const updated = await pool.query(
+      `UPDATE users
+       SET password = $1, username = $2, invite_token = NULL, invite_expires = NULL
+       WHERE id = $3
+       RETURNING id, email, role, username`,
+      [hashedPassword, username || null, user.rows[0].id]
+    );
+
+    const u = updated.rows[0];
+    const jwtToken = jwt.sign(
+      { id: u.id, role: u.role, email: u.email, username: u.username },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token: jwtToken });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.register = async (req, res) => {
   const { email, password, role, username } = req.body;
 
@@ -134,7 +220,7 @@ exports.getMembers = async (req, res) => {
     const users = await pool.query(
       `SELECT id, username, email, role, created_at
        FROM users
-       WHERE role = 'member'
+       WHERE role = 'member' AND password IS NOT NULL
        ORDER BY id DESC`
     );
     res.json(users.rows);
