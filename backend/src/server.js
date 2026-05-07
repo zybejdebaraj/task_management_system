@@ -19,6 +19,7 @@ const subtaskRoutes = require('./routes/subtasks');
 const chatRoutes = require('./routes/chat');
 
 const app = express();
+app.set('trust proxy', 1);
 
 const allowedOrigins = [
   'http://localhost:5173',
