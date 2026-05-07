@@ -25,6 +25,9 @@ const allowedOrigins = [
   ...(process.env.FRONTEND_URL
     ? [process.env.FRONTEND_URL.replace(/\/$/, '')]
     : []),
+  ...(process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/\/$/, ''))
+    : []),
 ];
 
 app.use(cors({

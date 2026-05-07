@@ -83,7 +83,7 @@ export default {
       window.google.accounts.id.renderButton(this.$refs.googleBtn, {
         theme: 'outline',
         size: 'large',
-        width: '100%',
+        width: 360,
         text: 'signup_with',
       });
     },
