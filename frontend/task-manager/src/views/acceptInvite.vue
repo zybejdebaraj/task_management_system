@@ -17,7 +17,7 @@
         <!-- Setup form -->
         <template v-else>
           <h2 class="text-2xl font-bold text-slate-900 mb-1">Create your account</h2>
-          <p class="text-sm text-slate-500 mb-6">You have been invited to join IdealTask. Choose a name and password to get started.</p>
+          <p class="text-sm text-slate-500 mb-6">You have been invited to join TaskFlow. Choose a name and password to get started.</p>
 
           <div class="space-y-4">
             <div>
@@ -96,7 +96,7 @@ export default {
         });
         localStorage.removeItem('token');
         localStorage.setItem('token', res.data.token);
-        toast.success('Account created! Welcome to IdealTask.');
+        toast.success('Account created! Welcome to TaskFlow.');
         this.$router.push('/dashboard');
       } catch (err) {
         const msg = err.response?.data?.message || 'Failed to set up account';

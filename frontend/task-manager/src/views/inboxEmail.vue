@@ -92,7 +92,7 @@ export default {
         { key: 'drafts', label: 'Drafts' },
       ],
       mockEmails: [
-        { id: 1, sender: 'IdealTask', subject: 'Welcome to your workspace', time: '12:15 PM' },
+        { id: 1, sender: 'TaskFlow', subject: 'Welcome to your workspace', time: '12:15 PM' },
         { id: 2, sender: 'Admin', subject: 'Task assigned: {{taskTitle}}', time: '11:22 AM' },
         { id: 3, sender: 'Notifications', subject: 'Reminder: Due date is coming soon', time: '10:04 AM' },
         { id: 4, sender: 'Project Bot', subject: 'You were invited to {{projectName}}', time: '9:45 AM' }
@@ -101,7 +101,7 @@ export default {
         { id: 'welcome', name: 'Welcome Member', subject: 'Welcome to {{projectName}}', body: 'Hi {{memberName}},\n\nWelcome to {{projectName}}! Your account is active and you can now view your tasks and updates.\n\nRegards,\n{{adminName}}' },
         { id: 'assignment', name: 'Task Assignment', subject: 'New Task Assigned: {{taskTitle}}', body: 'Hi {{memberName}},\n\nYou have been assigned a new task:\n- Task: {{taskTitle}}\n- Project: {{projectName}}\n- Due: {{dueDate}}\n\nPlease update progress in the board.\n\nThanks,\n{{adminName}}' },
         { id: 'reminder', name: 'Due Reminder', subject: 'Reminder: {{taskTitle}} is due soon', body: 'Hi {{memberName}},\n\nFriendly reminder that {{taskTitle}} is due on {{dueDate}}.\n\nRegards,\n{{adminName}}' },
-        { id: 'completed', name: 'Task Completed', subject: 'Task Completed: {{taskTitle}}', body: 'Hi Team,\n\n{{memberName}} has marked {{taskTitle}} as completed.\n\nThanks,\nIdealTask' },
+        { id: 'completed', name: 'Task Completed', subject: 'Task Completed: {{taskTitle}}', body: 'Hi Team,\n\n{{memberName}} has marked {{taskTitle}} as completed.\n\nThanks,\nTaskFlow' },
         { id: 'invite', name: 'Project Invite', subject: 'You are invited to {{projectName}}', body: 'Hi {{memberName}},\n\nYou have been invited to join {{projectName}}.\n\nRegards,\n{{adminName}}' }
       ]
     };

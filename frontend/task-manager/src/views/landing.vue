@@ -1,130 +1,148 @@
 <template>
-  <div class="min-h-screen font-sans bg-white">
+  <div class="min-h-screen font-sans bg-[#0a0a0f] text-white overflow-x-hidden">
 
     <!-- Nav -->
-    <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-100">
-      <div class="w-full px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-2">
-          <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600 grid place-items-center text-white font-black text-xs tracking-tight shrink-0">IT</div>
-          <strong class="text-slate-900 font-bold text-sm sm:text-base">IdealTask</strong>
-        </div>
-        <nav class="hidden md:flex gap-6 lg:gap-8 text-base lg:text-lg text-slate-500 font-medium">
-          <a class="hover:text-slate-900 cursor-pointer transition">Features</a>
-          <a class="hover:text-slate-900 cursor-pointer transition">How it works</a>
-          <a class="hover:text-slate-900 cursor-pointer transition">Team</a>
-        </nav>
-        <div class="flex items-center gap-1.5 sm:gap-2">
-          <button class="text-sm sm:text-base font-semibold text-slate-600 px-4 py-2 rounded-xl hover:bg-slate-100 transition bg-transparent border-none cursor-pointer" @click="$router.push('/login')">Sign in</button>
-          <button class="text-sm sm:text-base font-semibold text-white px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 transition cursor-pointer border-none shadow-sm" @click="$router.push('/register')">Get started</button>
-        </div>
+    <header class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-10 h-16 bg-[#0a0a0f]/80 backdrop-blur-md border-b border-white/5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 grid place-items-center font-black text-xs text-white shrink-0">TF</div>
+        <span class="font-bold text-white text-base tracking-tight">TaskFlow</span>
+      </div>
+      <nav class="hidden md:flex gap-8 text-sm text-white/50 font-medium">
+        <a class="hover:text-white transition cursor-pointer">Features</a>
+        <a class="hover:text-white transition cursor-pointer">How it works</a>
+        <a class="hover:text-white transition cursor-pointer">Pricing</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <button class="text-sm font-semibold text-white/60 hover:text-white px-4 py-2 rounded-lg transition bg-transparent border-none cursor-pointer" @click="$router.push('/login')">Sign in</button>
+        <button class="text-sm font-semibold text-white px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition cursor-pointer border-none" @click="$router.push('/register')">Get started</button>
       </div>
     </header>
 
     <!-- Hero -->
-    <section class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white">
-      <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(99,102,241,0.18) 0%, transparent 70%)"></div>
-      <div class="w-full px-4 sm:px-6 py-14 sm:py-20 md:py-28 lg:py-32 grid md:grid-cols-2 gap-10 lg:gap-14 items-center relative">
-        <div class="text-center md:text-left">
-          <span class="inline-block text-xs sm:text-sm font-bold uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-4 py-1.5 rounded-full mb-4 sm:mb-6">Project management, simplified</span>
-          <h1 class="text-4xl sm:text-5xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-tight mb-4 sm:mb-6 tracking-tight">
-            Your team's work,<br />
-            <span class="text-indigo-400">all in one place.</span>
-          </h1>
-          <p class="text-slate-400 text-lg sm:text-xl lg:text-2xl mb-6 sm:mb-8 leading-relaxed max-w-xl mx-auto md:mx-0">Manage projects, assign tasks, track progress, and keep your team in sync — without the noise.</p>
-          <div class="flex gap-3 flex-wrap justify-center md:justify-start">
-            <button class="px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base sm:text-lg transition cursor-pointer border-none shadow-lg shadow-indigo-900/40" @click="$router.push('/register')">Start for free</button>
-            <button class="px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white font-semibold text-base sm:text-lg transition cursor-pointer" @click="$router.push('/login')">Sign in</button>
-          </div>
-          <p class="mt-3 sm:mt-4 text-sm sm:text-base text-slate-500">No credit card required. Free to get started.</p>
-        </div>
+    <section class="relative min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-16 text-center">
+      <!-- Background glow -->
+      <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full bg-violet-600/20 blur-[120px] pointer-events-none"></div>
+      <div class="absolute top-1/2 left-1/4 w-[300px] h-[300px] rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none"></div>
 
-        <!-- Kanban preview card -->
-        <div class="hidden md:block">
-          <div class="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-5 shadow-2xl backdrop-blur-sm">
-            <div class="flex items-center gap-2 mb-4">
-              <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-              <div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-              <div class="w-2.5 h-2.5 rounded-full bg-green-400"></div>
-              <span class="text-slate-400 text-xs ml-2">Project Dashboard</span>
-            </div>
-            <div class="grid grid-cols-3 gap-2 lg:gap-3">
-              <div v-for="col in previewCols" :key="col.label">
-                <p class="text-xs font-bold uppercase tracking-wide mb-2" :class="col.labelClass">{{ col.label }}</p>
-                <div class="space-y-2">
-                  <div v-for="card in col.cards" :key="card.title" class="bg-white/8 border border-white/10 rounded-xl p-2 lg:p-3">
-                    <p class="text-xs text-slate-200 font-medium leading-snug">{{ card.title }}</p>
-                    <div class="flex items-center justify-between mt-2">
-                      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full" :class="card.badge">{{ card.priority }}</span>
-                      <div class="w-5 h-5 rounded-full bg-indigo-500/40 border border-indigo-400/30 text-[9px] text-indigo-200 grid place-items-center font-bold">{{ card.avatar }}</div>
-                    </div>
-                  </div>
+      <div class="relative max-w-4xl mx-auto">
+        <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-violet-400 bg-violet-500/10 border border-violet-500/20 px-4 py-1.5 rounded-full mb-8">
+          <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span>
+          Now in beta — free for teams
+        </span>
+
+        <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.9] tracking-tighter mb-6">
+          Ship work<br />
+          <span class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">faster, together.</span>
+        </h1>
+
+        <p class="text-white/50 text-lg sm:text-xl max-w-xl mx-auto mb-10 leading-relaxed">
+          TaskFlow brings your projects, tasks, and team into one clean workspace — so nothing gets lost and everyone stays in sync.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <button class="px-8 py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-base transition cursor-pointer border-none shadow-lg shadow-violet-900/50" @click="$router.push('/register')">
+            Start free today
+          </button>
+          <button class="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-base transition cursor-pointer" @click="$router.push('/login')">
+            Sign in
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard mockup -->
+      <div class="relative mt-16 w-full max-w-5xl mx-auto">
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent z-10 pointer-events-none" style="top: 60%"></div>
+        <div class="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 backdrop-blur-sm">
+          <!-- Mock header bar -->
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-white/3">
+            <div class="w-2.5 h-2.5 rounded-full bg-red-500/60"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-amber-500/60"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-green-500/60"></div>
+            <span class="ml-3 text-white/30 text-xs font-mono">taskflow.app / dashboard</span>
+          </div>
+          <!-- Mock content -->
+          <div class="grid grid-cols-3 gap-3 p-4">
+            <div v-for="col in previewCols" :key="col.label" class="space-y-2">
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-2 h-2 rounded-full" :class="col.dot"></div>
+                <p class="text-xs font-bold uppercase tracking-widest" :class="col.labelClass">{{ col.label }}</p>
+                <span class="ml-auto text-xs text-white/20">{{ col.cards.length }}</span>
+              </div>
+              <div v-for="card in col.cards" :key="card.title" class="bg-white/5 border border-white/8 rounded-xl p-3 hover:border-white/15 transition">
+                <p class="text-xs text-white/80 font-medium leading-snug mb-2">{{ card.title }}</p>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="card.badge">{{ card.priority }}</span>
+                  <div class="w-5 h-5 rounded-full text-[9px] font-bold grid place-items-center" :class="card.avatarClass">{{ card.avatar }}</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="absolute bottom-0 left-0 right-0 h-10 bg-white" style="clip-path: ellipse(55% 100% at 50% 100%)"></div>
     </section>
 
-    <!-- Stats -->
-    <section class="w-full px-4 sm:px-6 py-10 sm:py-14">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+    <!-- Stats bar -->
+    <section class="border-y border-white/5 py-10 bg-white/[0.02]">
+      <div class="max-w-4xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6">
         <div v-for="stat in stats" :key="stat.label" class="text-center">
-          <p class="text-4xl sm:text-5xl font-black text-indigo-600 mb-1">{{ stat.value }}</p>
-          <p class="text-sm sm:text-base text-slate-500 font-medium">{{ stat.label }}</p>
+          <p class="text-3xl sm:text-4xl font-black text-white mb-1">{{ stat.value }}</p>
+          <p class="text-xs sm:text-sm text-white/40 font-medium">{{ stat.label }}</p>
         </div>
       </div>
     </section>
 
     <!-- Features -->
-    <section class="bg-slate-50 border-y border-slate-100 py-14 sm:py-20">
-      <div class="w-full px-4 sm:px-6">
-        <div class="text-center mb-10 sm:mb-14">
-          <p class="text-sm sm:text-base font-bold text-indigo-600 uppercase tracking-widest mb-3">Built for teams</p>
-          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900">Everything you need to ship work</h2>
+    <section class="py-24 px-4">
+      <div class="max-w-5xl mx-auto">
+        <div class="text-center mb-16">
+          <p class="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">Built for real teams</p>
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">Everything in one place.</h2>
         </div>
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          <article v-for="f in features" :key="f.title" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 hover:border-indigo-300 hover:shadow-lg transition">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl mb-4 grid place-items-center text-2xl sm:text-3xl" :class="f.bg">{{ f.icon }}</div>
-            <h3 class="font-bold text-slate-900 mb-2 text-lg sm:text-xl">{{ f.title }}</h3>
-            <p class="text-sm sm:text-base text-slate-500 leading-relaxed">{{ f.desc }}</p>
+
+        <!-- Feature grid: 2 big + 4 small -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <article v-for="(f, i) in features" :key="f.title"
+            :class="['rounded-2xl border p-6 sm:p-8 transition group', i < 2 ? 'lg:col-span-1 border-white/10 bg-white/[0.04] hover:bg-white/[0.07]' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05]']">
+            <div class="text-3xl mb-4">{{ f.icon }}</div>
+            <h3 class="font-bold text-white text-lg mb-2">{{ f.title }}</h3>
+            <p class="text-sm text-white/40 leading-relaxed">{{ f.desc }}</p>
           </article>
         </div>
       </div>
     </section>
 
     <!-- How it works -->
-    <section class="w-full px-4 sm:px-6 py-14 sm:py-20">
-      <div class="text-center mb-10 sm:mb-14">
-        <p class="text-sm sm:text-base font-bold text-indigo-600 uppercase tracking-widest mb-3">Simple process</p>
-        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900">Up and running in minutes</h2>
-      </div>
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 relative">
-        <div class="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-indigo-200 to-transparent"></div>
-        <article v-for="step in steps" :key="step.num" class="text-center relative">
-          <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-indigo-600 text-white font-black text-xl sm:text-3xl grid place-items-center mx-auto mb-4 sm:mb-5 shadow-lg shadow-indigo-200">{{ step.num }}</div>
-          <h4 class="font-bold text-slate-900 mb-1 sm:mb-2 text-base sm:text-lg">{{ step.title }}</h4>
-          <p class="text-sm sm:text-base text-slate-500 leading-relaxed">{{ step.desc }}</p>
-        </article>
+    <section class="py-24 px-4 bg-white/[0.02] border-y border-white/5">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-16">
+          <p class="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">Simple process</p>
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">Up in minutes.</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div v-for="step in steps" :key="step.num" class="relative">
+            <div class="w-10 h-10 rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-400 font-black text-lg grid place-items-center mb-4">{{ step.num }}</div>
+            <h4 class="font-bold text-white text-base mb-2">{{ step.title }}</h4>
+            <p class="text-sm text-white/40 leading-relaxed">{{ step.desc }}</p>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Testimonials -->
-    <section class="bg-slate-50 border-y border-slate-100 py-14 sm:py-20">
-      <div class="w-full px-4 sm:px-6">
-        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-8 sm:mb-12 text-center">Trusted by productive teams</h2>
-        <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-          <article v-for="q in quotes" :key="q.author" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
-            <div class="flex gap-1 mb-3 sm:mb-4">
-              <span v-for="i in 5" :key="i" class="text-amber-400 text-base sm:text-lg">★</span>
+    <section class="py-24 px-4">
+      <div class="max-w-5xl mx-auto">
+        <h2 class="text-3xl sm:text-4xl font-black text-white text-center mb-14 tracking-tight">Teams love TaskFlow.</h2>
+        <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <article v-for="q in quotes" :key="q.author" class="bg-white/[0.04] border border-white/8 rounded-2xl p-6 hover:border-white/15 transition">
+            <div class="flex gap-0.5 mb-4">
+              <span v-for="i in 5" :key="i" class="text-amber-400 text-sm">★</span>
             </div>
-            <p class="text-slate-700 mb-4 sm:mb-5 leading-relaxed text-sm sm:text-base">"{{ q.text }}"</p>
-            <div class="flex items-center gap-2 sm:gap-3">
-              <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-indigo-100 text-indigo-700 font-bold text-base sm:text-lg grid place-items-center shrink-0">{{ q.author.charAt(0) }}</div>
+            <p class="text-white/70 text-sm leading-relaxed mb-5">"{{ q.text }}"</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-violet-600/30 text-violet-300 font-bold text-sm grid place-items-center shrink-0">{{ q.author.charAt(0) }}</div>
               <div>
-                <p class="text-sm sm:text-base font-bold text-slate-800">{{ q.author }}</p>
-                <p class="text-xs sm:text-sm text-slate-400">{{ q.role }}</p>
+                <p class="text-sm font-bold text-white">{{ q.author }}</p>
+                <p class="text-xs text-white/30">{{ q.role }}</p>
               </div>
             </div>
           </article>
@@ -133,29 +151,31 @@
     </section>
 
     <!-- CTA -->
-    <section class="w-full px-4 sm:px-6 py-14 sm:py-20">
-      <div class="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-700 rounded-2xl sm:rounded-3xl p-8 sm:p-10 md:p-12 text-center text-white shadow-2xl">
-        <div class="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5"></div>
-        <div class="absolute -bottom-12 -left-12 w-48 h-48 rounded-full bg-white/5"></div>
-        <div class="relative">
-          <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 sm:mb-3">Ready to get organized?</h2>
-          <p class="text-indigo-200 mb-6 sm:mb-8 text-base sm:text-lg max-w-2xl mx-auto">Projects, tasks, members, and messages — all in one clean workspace.</p>
-          <div class="flex gap-3 justify-center flex-wrap">
-            <button class="px-7 sm:px-10 py-3 sm:py-4 rounded-xl bg-white text-indigo-700 font-bold text-base sm:text-lg hover:bg-indigo-50 transition cursor-pointer border-none shadow-lg" @click="$router.push('/register')">Create free account</button>
-            <button class="px-7 sm:px-10 py-3 sm:py-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-base sm:text-lg transition cursor-pointer" @click="$router.push('/login')">Sign in instead</button>
+    <section class="py-16 px-4">
+      <div class="max-w-3xl mx-auto text-center">
+        <div class="relative bg-gradient-to-br from-violet-600/30 to-indigo-600/20 border border-violet-500/20 rounded-3xl p-10 sm:p-16 overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-violet-600/10 to-transparent pointer-events-none"></div>
+          <div class="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-violet-500/10 blur-[60px]"></div>
+          <div class="relative">
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">Ready to flow?</h2>
+            <p class="text-white/50 text-base sm:text-lg mb-8 max-w-md mx-auto">Join teams already shipping faster with TaskFlow. Free to start, no card needed.</p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+              <button class="px-8 py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-base transition cursor-pointer border-none shadow-xl shadow-violet-900/40" @click="$router.push('/register')">Create free account</button>
+              <button class="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-base transition cursor-pointer" @click="$router.push('/login')">Sign in instead</button>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-100 py-6 sm:py-8">
-      <div class="w-full px-4 sm:px-6 flex items-center justify-between gap-4 flex-wrap">
-        <div class="flex items-center gap-2">
-          <div class="w-6 h-6 rounded-md bg-indigo-600 grid place-items-center text-white font-black text-[10px]">IT</div>
-          <span class="text-base font-bold text-slate-700">IdealTask</span>
+    <footer class="border-t border-white/5 py-8 px-6 sm:px-10">
+      <div class="max-w-5xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+        <div class="flex items-center gap-2.5">
+          <div class="w-6 h-6 rounded-md bg-gradient-to-br from-violet-500 to-indigo-600 grid place-items-center text-white font-black text-[10px]">TF</div>
+          <span class="text-sm font-bold text-white/70">TaskFlow</span>
         </div>
-        <p class="text-sm text-slate-400">© {{ new Date().getFullYear() }} IdealTask. All rights reserved.</p>
+        <p class="text-xs text-white/25">© {{ new Date().getFullYear() }} TaskFlow. All rights reserved.</p>
       </div>
     </footer>
 
@@ -168,24 +188,24 @@ export default {
     return {
       previewCols: [
         {
-          label: 'Todo', labelClass: 'text-slate-400',
+          label: 'To Do', labelClass: 'text-white/40', dot: 'bg-white/20',
           cards: [
-            { title: 'Update API docs', priority: 'Low', badge: 'bg-slate-700 text-slate-300', avatar: 'A' },
-            { title: 'Design review', priority: 'High', badge: 'bg-red-900/60 text-red-300', avatar: 'B' },
+            { title: 'Update API docs', priority: 'Low', badge: 'bg-white/10 text-white/50', avatar: 'A', avatarClass: 'bg-slate-600/50 text-white/60' },
+            { title: 'Design review', priority: 'High', badge: 'bg-red-500/20 text-red-400', avatar: 'B', avatarClass: 'bg-pink-600/40 text-pink-300' },
           ]
         },
         {
-          label: 'In Progress', labelClass: 'text-amber-400',
+          label: 'In Progress', labelClass: 'text-amber-400', dot: 'bg-amber-400',
           cards: [
-            { title: 'Auth flow redesign', priority: 'High', badge: 'bg-red-900/60 text-red-300', avatar: 'C' },
-            { title: 'Write unit tests', priority: 'Med', badge: 'bg-amber-900/60 text-amber-300', avatar: 'A' },
+            { title: 'Auth flow redesign', priority: 'High', badge: 'bg-red-500/20 text-red-400', avatar: 'C', avatarClass: 'bg-violet-600/40 text-violet-300' },
+            { title: 'Write unit tests', priority: 'Med', badge: 'bg-amber-500/20 text-amber-400', avatar: 'A', avatarClass: 'bg-slate-600/50 text-white/60' },
           ]
         },
         {
-          label: 'Done', labelClass: 'text-green-400',
+          label: 'Done', labelClass: 'text-emerald-400', dot: 'bg-emerald-400',
           cards: [
-            { title: 'Set up CI pipeline', priority: 'Med', badge: 'bg-amber-900/60 text-amber-300', avatar: 'D' },
-            { title: 'Onboard new dev', priority: 'Low', badge: 'bg-slate-700 text-slate-300', avatar: 'B' },
+            { title: 'Set up CI pipeline', priority: 'Med', badge: 'bg-amber-500/20 text-amber-400', avatar: 'D', avatarClass: 'bg-sky-600/40 text-sky-300' },
+            { title: 'Onboard new dev', priority: 'Low', badge: 'bg-white/10 text-white/50', avatar: 'B', avatarClass: 'bg-pink-600/40 text-pink-300' },
           ]
         },
       ],
@@ -196,23 +216,23 @@ export default {
         { value: '4.9★', label: 'Average rating' },
       ],
       features: [
-        { icon: '🗂️', bg: 'bg-indigo-50', title: 'Kanban Board', desc: 'Drag tasks across Todo, In Progress, and Done columns to visualize your team\'s workflow at a glance.' },
-        { icon: '📁', bg: 'bg-violet-50', title: 'Project Workspaces', desc: 'Each admin manages their own isolated projects and team members — clean and conflict-free.' },
-        { icon: '👥', bg: 'bg-sky-50', title: 'Team Roles', desc: 'Admins control structure and assignments. Members focus purely on executing their work.' },
-        { icon: '🔔', bg: 'bg-amber-50', title: 'Smart Notifications', desc: 'Get notified when you\'re assigned a task, a deadline approaches, or a teammate completes work.' },
-        { icon: '✉️', bg: 'bg-green-50', title: 'Built-in Messaging', desc: 'Send emails directly from your workspace using your own SMTP account.' },
-        { icon: '📊', bg: 'bg-rose-50', title: 'Live Dashboard', desc: 'Charts, team productivity stats, project progress, and throughput — all in one view.' },
+        { icon: '🗂️', title: 'Kanban Board', desc: 'Visualize work across Todo, In Progress, and Done. Drag, drop, and ship.' },
+        { icon: '📁', title: 'Project Workspaces', desc: 'Isolated projects per admin — clean structure, zero overlap between teams.' },
+        { icon: '👥', title: 'Team Roles', desc: 'Admins plan. Members execute. Clear separation, no accidental changes.' },
+        { icon: '🔔', title: 'Smart Notifications', desc: 'Get pinged on assignment, deadlines, and completions — only what matters.' },
+        { icon: '✉️', title: 'Built-in Messaging', desc: 'Send emails straight from your workspace with your own SMTP settings.' },
+        { icon: '📊', title: 'Live Dashboard', desc: 'Team stats, project health, and throughput — all visible at a glance.' },
       ],
       steps: [
-        { num: '1', title: 'Create an account', desc: 'Sign up as an admin and set up your workspace in seconds.' },
-        { num: '2', title: 'Add your team', desc: 'Invite members and organize them into projects.' },
-        { num: '3', title: 'Assign tasks', desc: 'Create tasks, set priorities and due dates, and assign them to the right people.' },
-        { num: '4', title: 'Ship together', desc: 'Track progress on the board and get notified as work gets done.' },
+        { num: '1', title: 'Create account', desc: 'Sign up as admin and set up your workspace in under a minute.' },
+        { num: '2', title: 'Invite your team', desc: 'Send invite links. Members join and see their tasks instantly.' },
+        { num: '3', title: 'Assign & prioritize', desc: 'Create tasks, set deadlines, and assign the right people.' },
+        { num: '4', title: 'Track & ship', desc: 'Watch progress live on the board and get notified as work moves forward.' },
       ],
       quotes: [
-        { text: 'Our sprint planning went from a messy spreadsheet to a clean board in one afternoon. The team actually enjoys updating tasks now.', author: 'Sarah K.', role: 'Product Manager' },
-        { text: 'The role system is exactly what we needed. Admins plan, devs execute — no more accidental task deletions.', author: 'Marcus T.', role: 'Engineering Lead' },
-        { text: 'Notifications and the dashboard keep me on top of every project without having to chase anyone for updates.', author: 'Lena R.', role: 'Team Lead' },
+        { text: 'Sprint planning went from a chaotic spreadsheet to a clean board in one afternoon.', author: 'Sarah K.', role: 'Product Manager' },
+        { text: 'The role system is exactly what we needed — admins plan, devs execute, no mess.', author: 'Marcus T.', role: 'Engineering Lead' },
+        { text: "I can see every project's progress without chasing anyone for updates. Game changer.", author: 'Lena R.', role: 'Team Lead' },
       ]
     };
   }

@@ -20,8 +20,8 @@
     <!-- Brand -->
     <div :class="['flex items-center pt-2 pb-2', collapsed ? 'justify-center' : 'gap-3 px-2']">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-9 h-9 rounded-xl bg-indigo-600 grid place-items-center font-bold text-sm shrink-0">IT</div>
-        <span v-if="!collapsed" class="font-bold text-base tracking-tight truncate">IdealTask</span>
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 grid place-items-center font-bold text-sm shrink-0">TF</div>
+        <span v-if="!collapsed" class="font-bold text-base tracking-tight truncate">TaskFlow</span>
       </div>
     </div>
 
