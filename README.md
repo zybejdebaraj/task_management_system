@@ -1,4 +1,4 @@
-# IdealTask — Task Management System
+# TaskFlow — Task Management System
 
 A full-stack team task management platform built with **Vue 3**, **Node.js/Express**, and **PostgreSQL**.
 
