@@ -156,15 +156,15 @@ export default {
     },
     async createSubtask() {
       if (!this.newSubtask.trim()) return;
-      try { await api.post(`/tasks/${this.task.id}/subtasks`, { title: this.newSubtask }); this.newSubtask = ''; await this.loadSubtasks(); toast.success('Subtask added'); }
+      try { await api.post(`/tasks/${this.task.id}/subtasks`, { title: this.newSubtask }); this.newSubtask = ''; await this.loadSubtasks(); this.$emit('updated'); toast.success('Subtask added'); }
       catch (err) { toast.error(err.response?.data?.message || 'Failed to add subtask'); }
     },
     async toggleSubtask(subtask) {
-      try { await api.put(`/subtasks/${subtask.id}`, { is_done: !subtask.is_done }); await this.loadSubtasks(); }
+      try { await api.put(`/subtasks/${subtask.id}`, { is_done: !subtask.is_done }); await this.loadSubtasks(); this.$emit('updated'); }
       catch (err) { toast.error(err.response?.data?.message || 'Failed to update subtask'); }
     },
     async deleteSubtask(subtaskId) {
-      try { await api.delete(`/subtasks/${subtaskId}`); await this.loadSubtasks(); toast.success('Subtask deleted'); }
+      try { await api.delete(`/subtasks/${subtaskId}`); await this.loadSubtasks(); this.$emit('updated'); toast.success('Subtask deleted'); }
       catch (err) { toast.error(err.response?.data?.message || 'Failed to delete subtask'); }
     },
     async addComment() {

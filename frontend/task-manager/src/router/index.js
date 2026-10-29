@@ -2,18 +2,18 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { getUser } from '../utils/auth';
 
 import login from '../views/login.vue';
-import register from '../views/register.vue';
+const register = () => import('../views/register.vue');
 import landing from '../views/landing.vue';
-import dashboard from '../views/dashboard.vue';
-import TasksPage from '../views/tasks.vue';
-import ProjectsPage from '../views/projects.vue';
-import InboxEmailPage from '../views/inboxEmail.vue';
-import SettingsPage from '../views/settings.vue';
-import MembersPage from '../views/members.vue';
-import AuditLogPage from '../views/auditLog.vue';
-import ForgotPasswordPage from '../views/forgotPassword.vue';
-import ResetPasswordPage from '../views/resetPassword.vue';
-import AcceptInvitePage from '../views/acceptInvite.vue';
+const dashboard = () => import('../views/dashboard.vue');
+const TasksPage = () => import('../views/tasks.vue');
+const ProjectsPage = () => import('../views/projects.vue');
+const InboxEmailPage = () => import('../views/inboxEmail.vue');
+const SettingsPage = () => import('../views/settings.vue');
+const MembersPage = () => import('../views/members.vue');
+const AuditLogPage = () => import('../views/auditLog.vue');
+const ForgotPasswordPage = () => import('../views/forgotPassword.vue');
+const ResetPasswordPage = () => import('../views/resetPassword.vue');
+const AcceptInvitePage = () => import('../views/acceptInvite.vue');
 
 const isAuthenticated = () => {
   return !!getUser();

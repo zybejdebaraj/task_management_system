@@ -12,11 +12,11 @@ module.exports = async function (req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // Backward-compat: older tokens may not include role.
-    if (!decoded.role && decoded.id) {
-      const result = await pool.query('SELECT role FROM users WHERE id = $1', [decoded.id]);
-      decoded.role = result.rows[0]?.role || 'member';
+    const result = await pool.query('SELECT role FROM users WHERE id = $1', [decoded.id]);
+    if (!result.rows.length) {
+      return res.status(401).json({ message: 'Invalid token' });
     }
+    decoded.role = result.rows[0].role;
 
     req.user = decoded;
     next();

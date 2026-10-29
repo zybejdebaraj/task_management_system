@@ -1,10 +1,14 @@
 const pool = require('../config/db');
+const getTaskForUser = require('../utils/taskAccess');
 
 // Get comments for a task
 exports.getComments = async (req, res) => {
   const { taskId } = req.params;
 
   try {
+    const task = await getTaskForUser(taskId, req.user);
+    if (task === null) return res.status(404).json({ message: 'Task not found' });
+    if (task === false) return res.status(403).json({ message: 'Access denied' });
     const comments = await pool.query(
       `SELECT c.*, u.username, u.email
        FROM comments c
@@ -30,6 +34,9 @@ exports.createComment = async (req, res) => {
   }
 
   try {
+    const task = await getTaskForUser(taskId, req.user);
+    if (task === null) return res.status(404).json({ message: 'Task not found' });
+    if (task === false) return res.status(403).json({ message: 'Access denied' });
     const comment = await pool.query(
       `INSERT INTO comments (task_id, user_id, content)
        VALUES ($1, $2, $3)
@@ -41,8 +48,10 @@ exports.createComment = async (req, res) => {
     const mentions = [...content.matchAll(/@(\w+)/g)].map(m => m[1]);
     if (mentions.length) {
       const mentionedUsers = await pool.query(
-        `SELECT id, username FROM users WHERE username = ANY($1::text[]) AND id <> $2`,
-        [mentions, req.user.id]
+        `SELECT id, username FROM users
+         WHERE username = ANY($1::text[]) AND id <> $2
+           AND id = ANY($3::int[])`,
+        [mentions, req.user.id, [task.user_id, task.project_owner_id].filter(Boolean)]
       );
       const actor = req.user.username || req.user.email || 'Someone';
       for (const user of mentionedUsers.rows) {
@@ -64,10 +73,13 @@ exports.deleteComment = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const comment = await pool.query('SELECT user_id FROM comments WHERE id = $1', [id]);
+    const comment = await pool.query('SELECT user_id, task_id FROM comments WHERE id = $1', [id]);
     if (!comment.rows.length) {
       return res.status(404).json({ message: 'Comment not found' });
     }
+
+    const task = await getTaskForUser(comment.rows[0].task_id, req.user);
+    if (!task) return res.status(403).json({ message: 'Access denied' });
 
     if (req.user.role !== 'admin' && comment.rows[0].user_id !== req.user.id) {
       return res.status(403).json({ message: 'You can only delete your own comments' });

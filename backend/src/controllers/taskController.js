@@ -220,7 +220,7 @@ exports.updateTask = async (req, res) => {
   try {
     const existingTask = await pool.query(
       `SELECT t.title, t.description, t.status, t.completed_at, t.user_id, t.project_id,
-              t.due_date, t.priority, t.is_big, p.created_by AS project_owner_id
+              t.due_date, t.priority, t.is_big, t.labels, p.created_by AS project_owner_id
        FROM tasks t
        LEFT JOIN projects p ON p.id = t.project_id
        WHERE t.id = $1`,
@@ -231,6 +231,10 @@ exports.updateTask = async (req, res) => {
     }
 
     const existing = existingTask.rows[0];
+
+    if (status !== undefined && !['todo', 'in-progress', 'done'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid task status' });
+    }
 
     // Workflow rule: once Done, it can't move back.
     if (existing.status === 'done' && status && status !== 'done') {
@@ -247,7 +251,8 @@ exports.updateTask = async (req, res) => {
       if (!existing.user_id || Number(existing.user_id) !== Number(req.user.id)) {
         return res.status(403).json({ message: 'You can only update tasks assigned to you' });
       }
-      if (title || description || project_id || user_id || due_date || priority || is_big !== undefined) {
+      if (['title', 'description', 'project_id', 'user_id', 'due_date', 'priority', 'is_big', 'labels']
+        .some((field) => Object.prototype.hasOwnProperty.call(req.body, field))) {
         return res.status(403).json({ message: 'Members can only update task status' });
       }
       // Members can only change status of their own assigned tasks
@@ -367,10 +372,17 @@ exports.duplicateTask = async (req, res) => {
     }
 
     const copy = await pool.query(
-      `INSERT INTO tasks (title, description, status, project_id, created_by, user_id, due_date, priority, is_big)
-       VALUES ($1, $2, 'todo', $3, $4, $5, $6, $7, $8)
+      `INSERT INTO tasks (title, description, status, project_id, created_by, user_id, due_date, priority, is_big, labels)
+       VALUES ($1, $2, 'todo', $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [`${t.title} (copy)`, t.description, t.project_id, req.user.id, t.user_id, t.due_date, t.priority, t.is_big]
+      [`${t.title} (copy)`, t.description, t.project_id, req.user.id, t.user_id, t.due_date, t.priority, t.is_big, JSON.stringify(t.labels || [])]
+    );
+
+    await pool.query(
+      `INSERT INTO subtasks (task_id, title, is_done, position)
+       SELECT $1, title, FALSE, position FROM subtasks WHERE task_id = $2
+       ORDER BY position, id`,
+      [copy.rows[0].id, id]
     );
 
     await logTaskActivity(copy.rows[0].id, req.user.id, 'task_created', `Duplicated from task #${id}`);

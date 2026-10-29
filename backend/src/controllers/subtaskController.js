@@ -1,20 +1,8 @@
 const pool = require('../config/db');
 
-const getTaskForUser = async (taskId, user) => {
-  const result = await pool.query(
-    `SELECT id, user_id
-     FROM tasks
-     WHERE id = $1`,
-    [taskId]
-  );
-  if (!result.rows.length) return null;
-  const task = result.rows[0];
-  if (user.role === 'admin') return task;
-  if (task.user_id && Number(task.user_id) === Number(user.id)) return task;
-  return false;
-};
+const getTaskForUser = require('../utils/taskAccess');
 
-const syncParentTaskStatus = async (taskId) => {
+const syncParentTaskStatus = async (taskId, user) => {
   const summary = await pool.query(
     `SELECT
        t.status,
@@ -30,12 +18,29 @@ const syncParentTaskStatus = async (taskId) => {
 
   const { status, total, done_count: doneCount } = summary.rows[0];
   if (total > 0 && doneCount === total && status !== 'done') {
-    await pool.query(
+    const completed = await pool.query(
       `UPDATE tasks
        SET status = 'done', completed_at = CURRENT_TIMESTAMP
-       WHERE id = $1`,
+       WHERE id = $1 AND status <> 'done'
+       RETURNING title, project_id`,
       [taskId]
     );
+    if (completed.rows.length) {
+      await pool.query(
+        `INSERT INTO task_activity (task_id, actor_user_id, action, detail)
+         VALUES ($1, $2, 'task_updated', $3)`,
+        [taskId, user.id, `status: ${status} -> done (checklist completed)`]
+      );
+      if (user.role !== 'admin') {
+        const owner = await pool.query('SELECT created_by FROM projects WHERE id = $1', [completed.rows[0].project_id]);
+        if (owner.rows[0]?.created_by && Number(owner.rows[0].created_by) !== Number(user.id)) {
+          await pool.query(
+            'INSERT INTO notifications (user_id, task_id, message) VALUES ($1, $2, $3)',
+            [owner.rows[0].created_by, taskId, `${user.username || user.email || 'A member'} completed task "${completed.rows[0].title}".`]
+          );
+        }
+      }
+    }
     return;
   }
 
@@ -91,7 +96,7 @@ exports.createSubtask = async (req, res) => {
        RETURNING id, task_id, title, is_done, position, created_at`,
       [taskId, title.trim(), position]
     );
-    await syncParentTaskStatus(taskId);
+    await syncParentTaskStatus(taskId, req.user);
     res.json(created.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -126,7 +131,7 @@ exports.updateSubtask = async (req, res) => {
        RETURNING id, task_id, title, is_done, position, created_at`,
       [finalTitle, finalDone, id]
     );
-    await syncParentTaskStatus(existing.task_id);
+    await syncParentTaskStatus(existing.task_id, req.user);
     res.json(updated.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -150,7 +155,7 @@ exports.deleteSubtask = async (req, res) => {
 
     const taskId = existingResult.rows[0].task_id;
     await pool.query('DELETE FROM subtasks WHERE id = $1', [id]);
-    await syncParentTaskStatus(taskId);
+    await syncParentTaskStatus(taskId, req.user);
     res.json({ message: 'Subtask deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

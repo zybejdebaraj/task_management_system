@@ -1,4 +1,4 @@
-require('dotenv').config();
+const { port } = require('./config/env');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -71,13 +71,14 @@ const bootstrap = async () => {
       });
     }, 60 * 1000);
     console.log('DB connected and schema ensured');
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
   } catch (err) {
-    console.error('DB bootstrap failed', err);
+    console.error('DB bootstrap failed:', err.message);
+    await pool.end();
+    process.exitCode = 1;
   }
 };
 
 bootstrap();
-
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
-});

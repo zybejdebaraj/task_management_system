@@ -70,6 +70,8 @@
 
 <script>
 import { getUser, isAdmin } from '@/utils/auth';
+import api from '@/api/api';
+import { uploadUrl } from '@/api/config';
 import { LayoutDashboard, ListTodo, FolderKanban, Users, Mail, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
 export default {
@@ -106,11 +108,9 @@ export default {
     this.isAdminUser = isAdmin();
     this.user = getUser();
     try {
-      const { default: api } = await import('@/api/api');
       const res = await api.get('/auth/me');
       if (res.data.avatar_url) {
-        const base = import.meta.env.VITE_API_URL || '';
-        this.avatarUrl = res.data.avatar_url.startsWith('http') ? res.data.avatar_url : `${base}${res.data.avatar_url}`;
+        this.avatarUrl = uploadUrl(res.data.avatar_url);
       }
     } catch { /* silent */ }
   },

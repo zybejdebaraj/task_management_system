@@ -214,6 +214,7 @@
 
 <script>
 import api from '../api/api';
+import { uploadUrl } from '../api/config';
 import { toast } from '@/utils/toast';
 import { isAdmin } from '@/utils/auth';
 
@@ -247,9 +248,7 @@ export default {
   },
   computed: {
     fullAvatarUrl() {
-      if (!this.profile.avatar_url) return null;
-      if (this.profile.avatar_url.startsWith('http')) return this.profile.avatar_url;
-      return `${import.meta.env.VITE_API_URL}${this.profile.avatar_url}`;
+      return uploadUrl(this.profile.avatar_url);
     },
     filteredAuditRows() {
       const q = this.auditSearch.trim().toLowerCase();

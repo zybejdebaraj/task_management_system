@@ -97,6 +97,7 @@
             :canManage="user?.role === 'admin'"
             :viewerUserId="user?.id"
             @deleted="getTasks"
+            @updated="getTasks"
             @edit="handleEdit"
             @move="handleMove"
             @details="openDetails"
@@ -202,6 +203,8 @@
 import TaskCard from '../components/taskcard.vue';
 import TaskForm from '../components/taskform.vue';
 import api from '../api/api';
+import { uploadUrl } from '../api/config';
+import { toCsv } from '@/utils/csv';
 import { getUser } from '@/utils/auth';
 import BaseModal from '@/components/baseModal.vue';
 import { toast } from '@/utils/toast';
@@ -294,7 +297,15 @@ export default {
       catch (err) { console.error(err); }
     },
     async getTasks() {
-      try { const res = await api.get('/tasks'); this.tasks = res.data; await this.getNotifications(); this.tryOpenTaskFromRoute(); }
+      try {
+        const res = await api.get('/tasks');
+        this.tasks = res.data;
+        if (this.selectedTask) {
+          this.selectedTask = this.tasks.find((task) => task.id === this.selectedTask.id) || this.selectedTask;
+        }
+        await this.getNotifications();
+        this.tryOpenTaskFromRoute();
+      }
       catch (err) { console.error(err); }
     },
     async getNotifications() {
@@ -363,6 +374,7 @@ export default {
       try {
         await api.put(`/subtasks/${subtask.id}`, { is_done: !subtask.is_done });
         await this.loadDetailSubtasks(this.selectedTask.id);
+        await this.getTasks();
       } catch (err) { toast.error('Failed to update subtask'); }
     },
     tryOpenTaskFromRoute() {
@@ -381,16 +393,16 @@ export default {
       const headers = ['ID', 'Title', 'Status', 'Priority', 'Project', 'Assignee', 'Due Date', 'Created'];
       const rows = this.filteredTasks.map(t => [
         t.id,
-        `"${(t.title || '').replace(/"/g, '""')}"`,
+        t.title || '',
         t.status,
         t.priority || '',
-        `"${(t.project_name || '').replace(/"/g, '""')}"`,
-        `"${(t.assignee_username || t.assignee_email || '').replace(/"/g, '""')}"`,
+        t.project_name || '',
+        t.assignee_username || t.assignee_email || '',
         t.due_date ? new Date(t.due_date).toLocaleString() : '',
         t.created_at ? new Date(t.created_at).toLocaleString() : ''
       ]);
-      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const csv = toCsv([headers, ...rows]);
+      const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -400,9 +412,7 @@ export default {
     },
     formatDate(value) { return new Date(value).toLocaleString(); },
     attachmentUrl(path) {
-      if (!path) return '#';
-      if (path.startsWith('http://') || path.startsWith('https://')) return path;
-      return `http://localhost:5000${path}`;
+      return uploadUrl(path) || '#';
     }
   }
 };

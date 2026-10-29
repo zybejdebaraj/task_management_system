@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "node --test",
     "preview": "vite preview",
     "format": "prettier --write --experimental-cli src/"
   },
@@ -25,8 +26,7 @@
     "postcss": "^8.5.10",
     "prettier": "3.8.1",
     "tailwindcss": "^3.4.19",
-    "vite": "^8.0.3",
-    "vite-plugin-vue-devtools": "^8.1.1"
+    "vite": "^8.3.5"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

@@ -221,7 +221,12 @@ exports.acceptInvite = async (req, res) => {
 };
 
 exports.register = async (req, res) => {
-  const { email, password, role, username } = req.body;
+  const { email, password, username } = req.body;
+
+  if (typeof email !== 'string' || !email.trim()
+    || typeof password !== 'string' || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
 
   try {
     const userExists = await pool.query(
@@ -239,7 +244,7 @@ exports.register = async (req, res) => {
       `INSERT INTO users (email, password, role, username)
        VALUES ($1, $2, $3, $4)
        RETURNING id, email, role, username`,
-      [email, hashedPassword, role || 'member', username || null]
+      [email, hashedPassword, 'member', username || null]
     );
 
     res.json(newUser.rows[0]);

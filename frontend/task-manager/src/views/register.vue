@@ -19,13 +19,6 @@
             <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Password</label>
             <input v-model="password" type="password" placeholder="••••••••" class="block w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @keyup.enter="register" />
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Role</label>
-            <select v-model="role" class="block w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
         </div>
 
         <button
@@ -56,7 +49,7 @@ import { toast } from '@/utils/toast';
 
 export default {
   data() {
-    return { username: '', email: '', password: '', role: 'member', error: '' };
+    return { username: '', email: '', password: '', error: '' };
   },
   mounted() {
     this.initGoogle();
@@ -66,7 +59,7 @@ export default {
       if (!this.email || !this.password) { toast.error('Email and password are required'); return; }
       this.error = '';
       try {
-        await api.post('/auth/register', { username: this.username?.trim() || null, email: this.email, password: this.password, role: this.role });
+        await api.post('/auth/register', { username: this.username?.trim() || null, email: this.email, password: this.password });
         toast.success('Registered successfully');
         this.$router.push('/login');
       } catch (err) {

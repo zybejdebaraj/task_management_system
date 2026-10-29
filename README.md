@@ -107,9 +107,13 @@ A full-stack team task management platform built with **Vue 3**, **Node.js/Expre
 ```bash
 cd backend
 npm install
-# create .env with your DB credentials, JWT_SECRET, SMTP config, GOOGLE_CLIENT_ID
+# Windows PowerShell: Copy-Item .env.example .env
+# macOS/Linux: cp .env.example .env
+# Fill DB_NAME and DB_PASSWORD, check DB_USER, and set a unique JWT_SECRET.
 node src/server.js
 ```
+
+For local PostgreSQL, use `DB_HOST=localhost` with an existing database and set `DB_PORT` to the port shown in pgAdmin (`5432` is only the default). The backend always loads `backend/.env`, regardless of the terminal's working directory. The HTTP port defaults to 5000. Startup reports missing settings before attempting a database connection, and the HTTP server starts only after database initialization succeeds. SMTP and Google sign-in settings are optional for those features.
 
 ### Frontend
 ```bash
@@ -118,6 +122,13 @@ npm install
 # create .env with VITE_API_URL and VITE_GOOGLE_CLIENT_ID
 npm run dev
 ```
+
+The frontend reads its backend address from `VITE_API_URL` (see `frontend/task-manager/.env.example`). In development it defaults to `http://localhost:5000`; production without this setting uses the same origin. API requests, attachments, and profile images all use this address.
+
+### Maintenance checks
+Run `npm test` in both `backend` and `frontend/task-manager`, then run `npm run build` in the frontend. The tests use mock database responses and offline email composition; they do not create users or send messages. Public registration creates members only. Existing administrators keep their role, and authenticated requests check the current database role.
+
+With the local backend running, `npm run test:workflow` in `backend` runs the API workflow against your local PostgreSQL database. It creates isolated QA users and projects, exercises registration, invitations, password reset, assignment, attachments, comments, notifications, checklists, completion, duplication, templates, and access restrictions, then removes its fixtures. Results are saved to `backend/test-results/workflow.json`. The runner refuses hosted databases, production mode, and configured live SMTP; external email delivery, Google OAuth, and Groq calls require separate integration checks.
 
 ---
 

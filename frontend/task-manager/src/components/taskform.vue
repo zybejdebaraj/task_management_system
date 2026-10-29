@@ -88,6 +88,7 @@
 <script>
 import api from '../api/api';
 import { getUser } from '@/utils/auth';
+import { toLocalDateTime } from '@/utils/date';
 import { toast } from '@/utils/toast';
 
 export default {
@@ -115,7 +116,10 @@ export default {
   mounted() {
     this.user = getUser();
     if (!this.isAdminUser && this.user?.id) this.assigneeId = this.user.id;
-    if (this.isAdminUser) this.loadTemplates();
+    if (this.isAdminUser) {
+      this.loadTemplates();
+      if (this.projectId) this.refreshAssigneeData();
+    }
   },
   watch: {
     editingTask: {
@@ -129,13 +133,18 @@ export default {
           this.priority = newTask.priority || 'medium';
           this.description = newTask.description || '';
           this.isBig = !!newTask.is_big;
-          this.dueDate = newTask.due_date ? new Date(newTask.due_date).toISOString().slice(0, 16) : '';
+          this.dueDate = toLocalDateTime(newTask.due_date);
           if (this.isAdminUser) this.refreshAssigneeData();
         }
       }
     },
-    projectId() {
-      if (this.isAdminUser) { this.assigneeId = ''; this.refreshAssigneeData(); }
+    projectId(projectId) {
+      if (this.isAdminUser) {
+        if (!this.editingTask || Number(projectId) !== Number(this.editingTask.project_id)) {
+          this.assigneeId = '';
+        }
+        this.refreshAssigneeData();
+      }
       else if (this.user?.id) this.assigneeId = this.user.id;
     }
   },
